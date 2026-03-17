@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --border: rgba(255,255,255,0.08);
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .hero {
+      text-align: center;
+      padding: 80px 24px 48px;
+    }
+    .hero-logo {
+      display: inline-flex; align-items: center; gap: 12px;
+      margin-bottom: 24px;
+    }
+    .hero-logo .icon { font-size: 48px; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.1; }
+    .hero h1 span { background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.1rem; color: var(--muted); margin-top: 16px; max-width: 520px; margin-left: auto; margin-right: auto; }
+
+    .modules {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 32px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      display: flex; flex-direction: column; gap: 16px;
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--card-gradient);
+      opacity: 0; transition: opacity 0.3s;
+      border-radius: 20px;
+    }
+    .card:hover { transform: translateY(-4px); border-color: var(--card-color); box-shadow: 0 20px 60px var(--card-shadow); }
+    .card:hover::before { opacity: 0.06; }
+
+    .card-1 { --card-color: #6366f1; --card-gradient: linear-gradient(135deg, #6366f1, #8b5cf6); --card-shadow: rgba(99,102,241,0.3); }
+    .card-2 { --card-color: #10b981; --card-gradient: linear-gradient(135deg, #10b981, #059669); --card-shadow: rgba(16,185,129,0.3); }
+    .card-3 { --card-color: #f59e0b; --card-gradient: linear-gradient(135deg, #f59e0b, #d97706); --card-shadow: rgba(245,158,11,0.3); }
+
+    .card-icon { font-size: 40px; line-height: 1; position: relative; z-index: 1; }
+    .card-badge {
+      display: inline-block;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+      padding: 3px 10px; border-radius: 20px;
+      background: var(--card-color); color: #fff;
+      width: fit-content; position: relative; z-index: 1;
+    }
+    .card h2 { font-size: 1.5rem; font-weight: 700; position: relative; z-index: 1; }
+    .card p { font-size: 0.95rem; color: var(--muted); line-height: 1.6; position: relative; z-index: 1; }
+
+    .card-features { list-style: none; display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 1; }
+    .card-features li { font-size: 0.875rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .card-features li::before { content: '✓'; color: var(--card-color); font-weight: 700; font-size: 0.8rem; }
+
+    .card-cta {
+      margin-top: auto;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.95rem; font-weight: 600; color: var(--card-color);
+      position: relative; z-index: 1;
+    }
+    .card-cta::after { content: '→'; transition: transform 0.2s; }
+    .card:hover .card-cta::after { transform: translateX(4px); }
+
+    .footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .badge-new {
+      display: inline-block; background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="hero-logo">
+      <span class="icon">🌌</span>
+    </div>
+    <h1>Andromeda <span>Platform</span></h1>
+    <p>Tu suite de herramientas de marketing e-commerce. Todo en un solo lugar.</p>
+  </div>
+
+  <div class="modules">
+
+    <a href="/translator/" class="card card-1">
+      <div class="card-icon">📊</div>
+      <span class="card-badge">CSV TRANSLATOR</span>
+      <h2>CSV Traductor</h2>
+      <p>Traduce y enriquece catálogos de productos para Shopify con IA. Importa directamente a tu tienda.</p>
+      <ul class="card-features">
+        <li>Traducción masiva de CSVs</li>
+        <li>Integración con Shopify</li>
+        <li>Etiquetado con Gemini AI</li>
+        <li>Scraper de tiendas</li>
+      </ul>
+      <span class="card-cta">Abrir módulo</span>
+    </a>
+
+    <a href="/ads/" class="card card-2">
+      <div class="card-icon">🚀</div>
+      <span class="card-badge">ANDROMEDA ADS</span>
+      <h2>Ads Automation<span class="badge-new">AI</span></h2>
+      <p>Crea y gestiona campañas publicitarias en Meta, Google y TikTok con inteligencia artificial.</p>
+      <ul class="card-features">
+        <li>Conceptos de anuncios con IA</li>
+        <li>Lanzamiento en Meta Ads</li>
+        <li>Optimización automática</li>
+        <li>Dashboard de métricas</li>
+      </ul>
+      <span class="card-cta">Abrir módulo</span>
+    </a>
+
+    <a href="/studio/" class="card card-3">
+      <div class="card-icon">🎨</div>
+      <span class="card-badge">CREATIVE STUDIO</span>
+      <h2>Creative Studio</h2>
+      <p>Espacio de trabajo para crear y gestionar assets creativos para tus campañas publicitarias.</p>
+      <ul class="card-features">
+        <li>Generación de imágenes</li>
+        <li>Editor de creativos</li>
+        <li>Librería de assets</li>
+        <li>Próximamente más funciones</li>
+      </ul>
+      <span class="card-cta">Abrir módulo</span>
+    </a>
+
+  </div>
+
+  <div class="footer">
+    Andromeda Platform — Tu suite de marketing digital
+  </div>
+
+</body>
+</html>

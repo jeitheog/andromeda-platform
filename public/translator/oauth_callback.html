@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conectando con Shopify...</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #050508;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .box {
+      text-align: center;
+      padding: 2rem;
+      max-width: 360px;
+    }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .spinning { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
+    p { color: rgba(255,255,255,0.55); font-size: 0.9rem; }
+    .error { color: #f87171; }
+    .success { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon"><span class="spinning" id="icon">⚙️</span></div>
+    <h2 id="title">Procesando autorización...</h2>
+    <p id="msg">Intercambiando credenciales con Shopify, por favor espera.</p>
+  </div>
+
+  <script>
+    (async function () {
+      const icon  = document.getElementById('icon');
+      const title = document.getElementById('title');
+      const msg   = document.getElementById('msg');
+
+      const params = new URLSearchParams(window.location.search);
+      const error  = params.get('error');
+
+      // ── Error returned by Shopify (user denied) ──
+      if (error) {
+        icon.textContent  = '❌';
+        icon.classList.remove('spinning');
+        title.textContent = 'Acceso denegado';
+        msg.textContent   = 'El usuario canceló la autorización en Shopify.';
+        msg.classList.add('error');
+        if (window.opener) {
+          window.opener.postMessage({ type: 'shopify_oauth_error', error }, '*');
+          setTimeout(() => window.close(), 2000);
+        }
+        return;
+      }
+
+      const code = params.get('code');
+      const shop = params.get('shop');
+
+      if (!code || !shop) {
+        icon.textContent  = '⚠️';
+        icon.classList.remove('spinning');
+        title.textContent = 'Parámetros inválidos';
+        msg.textContent   = 'La URL de callback no contiene los parámetros esperados.';
+        msg.classList.add('error');
+        return;
+      }
+
+      // ── Exchange code for token via our backend (POST with stored credentials) ──
+      try {
+        // sessionStorage is NOT shared across cross-origin navigations; use localStorage instead
+        const clientId     = localStorage.getItem('oauth_client_id')     || '';
+        const clientSecret = localStorage.getItem('oauth_client_secret') || '';
+
+        // Collect ALL Shopify callback params so backend can verify HMAC correctly
+        const shopifyParams = {};
+        params.forEach((value, key) => { shopifyParams[key] = value; });
+
+        const res = await fetch('/api/shopify/oauth_callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...shopifyParams,
+            client_id:     clientId,
+            client_secret: clientSecret,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.success && data.token) {
+          // Save result and redirect back to main page — no popup needed
+          localStorage.setItem('shopify_oauth_result', JSON.stringify({
+            type:      'shopify_oauth_success',
+            token:     data.token,
+            store:     data.store,
+            shop_name: data.shop_name,
+          }));
+          window.location.replace('/');
+        } else {
+          throw new Error(data.error || 'Error desconocido');
+        }
+      } catch (e) {
+        icon.textContent  = '❌';
+        icon.classList.remove('spinning');
+        title.textContent = 'Error al conectar';
+        msg.textContent   = e.message;
+        msg.classList.add('error');
+        // Write error and redirect back after 2s so user sees the error
+        localStorage.setItem('shopify_oauth_result', JSON.stringify({
+          type:  'shopify_oauth_error',
+          error: e.message,
+        }));
+        setTimeout(() => window.location.replace('/'), 2500);
+      }
+    })();
+  </script>
+</body>
+</html>

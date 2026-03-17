@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSV Traductor — Andromeda Platform</title>
+  <style>
+    .platform-nav { display:flex; align-items:center; gap:12px; padding:10px 20px; background:#0a0a0f; border-bottom:1px solid rgba(255,255,255,0.08); font-family:sans-serif; }
+    .platform-nav a { color:#94a3b8; text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:6px; }
+    .platform-nav a:hover { color:#f1f5f9; }
+    .platform-nav .sep { color:rgba(255,255,255,0.2); font-size:0.85rem; }
+    .platform-nav .current { color:#f1f5f9; font-size:0.85rem; font-weight:600; }
+  </style>
+  <meta name="description"
+    content="Traduce archivos CSV al español de forma rápida y sencilla. Sube tu archivo, selecciona las columnas y descarga el resultado." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Cache-busting: always load the latest CSS -->
+  <script>
+    (function () {
+      var v = Date.now();
+      var l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = 'style.css?v=' + v;
+      document.head.appendChild(l);
+    })();
+  </script>
+</head>
+
+<body>
+  <nav class="platform-nav">
+    <a href="/">🌌 Andromeda Platform</a>
+    <span class="sep">›</span>
+    <span class="current">📊 CSV Traductor</span>
+  </nav>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🌐</span>
+      <span class="logo-text">CSV<span class="accent">Español</span></span>
+    </div>
+    <p class="tagline">Traduce tus archivos CSV al español en segundos</p>
+  </header>
+
+  <main class="main">
+
+    <!-- ── Panel de gestión de tienda ── -->
+    <section class="card" id="mgmtSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
+        <h2 style="margin:0;font-size:1.05rem;">🔧 Gestionar tienda Shopify</h2>
+        <button id="mgmtToggleBtn" disabled
+          style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 14px;color:rgba(255,255,255,0.65);font-size:0.82rem;cursor:pointer;">
+          <span id="mgmtToggleArrow">▼</span> Ver productos
+        </button>
+      </div>
+      <p id="mgmtConnHint" style="font-size:0.8rem;color:rgba(255,255,255,0.35);margin:0 0 8px;">Conecta tu tienda en el paso de importación para activar esta sección.</p>
+
+      <div id="mgmtPanel" style="display:none;margin-top:12px;">
+
+        <!-- Barra de acciones y búsqueda -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+          <input id="mgmtSearch" type="text" placeholder="🔍 Buscar producto..."
+            style="flex:1;min-width:160px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85rem;" />
+          <button id="mgmtLoadBtn"
+            style="padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);font-size:0.82rem;cursor:pointer;white-space:nowrap;">
+            ↻ Cargar
+          </button>
+          <button id="mgmtDeleteSelectedBtn"
+            style="display:none;padding:8px 14px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:0.82rem;cursor:pointer;white-space:nowrap;">
+            🗑️ Eliminar seleccionados
+          </button>
+        </div>
+
+        <p id="mgmtStatus" style="font-size:0.82rem;color:rgba(255,255,255,0.45);margin-bottom:10px;display:none;"></p>
+
+        <!-- Lista de productos -->
+        <div id="mgmtList" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+        <!-- Paginación -->
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:12px;">
+          <button id="mgmtPrevBtn" style="display:none;padding:6px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);font-size:0.82rem;cursor:pointer;">← Anterior</button>
+          <button id="mgmtNextBtn" style="display:none;padding:6px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);font-size:0.82rem;cursor:pointer;">Siguiente →</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- STEP 1: Upload -->
+    <section class="card" id="step-upload">
+      <div class="step-badge">1</div>
+      <h2>Sube tu archivo CSV</h2>
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">📂</div>
+        <p class="drop-title">Arrastra y suelta tu archivo aquí</p>
+        <p class="drop-sub">o haz clic para seleccionar</p>
+        <input type="file" id="fileInput" accept=".csv" hidden />
+        <button class="btn btn-outline" id="browseBtn">Seleccionar archivo</button>
+      </div>
+      <div class="file-info hidden" id="fileInfo">
+        <span class="file-icon">📄</span>
+        <span id="fileName"></span>
+        <span id="fileSize" class="muted"></span>
+        <button class="btn-icon" id="removeFile" title="Eliminar archivo">✕</button>
+      </div>
+
+      <!-- Importar desde URL de tienda Shopify -->
+      <div class="import-url-section">
+        <div class="import-divider">— o importa productos directamente desde una tienda Shopify —</div>
+        <div class="import-url-row">
+          <input type="text" id="shopifyImportUrl" class="select" placeholder="ej: montela.de o https://montela.de"
+            style="flex:1;padding:10px;" />
+          <button class="btn btn-outline" id="importFromUrlBtn">🔍 Importar productos</button>
+        </div>
+        <p class="config-hint" style="margin-top:6px;">Solo extrae los <strong>productos</strong> de la tienda (título,
+          descripción, variantes, imágenes). No extrae páginas, colecciones ni blog.</p>
+        <p id="importStatus" class="config-hint hidden" style="margin-top:6px;"></p>
+      </div>
+    </section>
+
+    <!-- STEP 2: Seleccionar productos -->
+    <section class="card hidden" id="step-select">
+      <div class="step-badge">2</div>
+      <h2>Selecciona los productos a traducir</h2>
+      <div class="select-actions">
+        <span id="selectProductCount" style="color:rgba(255,255,255,0.6);font-size:0.9rem;">0 seleccionados</span>
+        <button class="btn-text" id="selectAllProducts">Seleccionar todos</button>
+        <button class="btn-text" id="deselectAllProducts">Deseleccionar todos</button>
+        <button class="btn-text" id="backToUpload" style="margin-left:auto;">← Volver</button>
+      </div>
+      <input type="text" id="productSearchInput" placeholder="🔍 Buscar producto por nombre..."
+        style="width:100%;padding:9px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-size:0.9rem;margin-bottom:12px;box-sizing:border-box;outline:none;" />
+      <div class="products-grid" id="productsGrid"></div>
+      <button class="btn btn-primary" id="continueWithSelected" disabled style="margin-top:16px;">
+        ✨ Traducir seleccionados
+      </button>
+    </section>
+
+    <!-- STEP 3 (was 2): Configure -->
+    <section class="card hidden" id="step-configure">
+      <div class="step-badge">3</div>
+      <h2>Configura la traducción</h2>
+
+      <!-- Stats Display -->
+      <div class="stats-container" id="statsContainer">
+        <div class="stat-card">
+          <span class="stat-icon">📦</span>
+          <div class="stat-info">
+            <span class="stat-value" id="countProducts">-</span>
+            <span class="stat-label">Productos únicos</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">📑</span>
+          <div class="stat-info">
+            <span class="stat-value" id="countVariants">-</span>
+            <span class="stat-label">Variantes totales</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <label class="config-label">Idioma de origen</label>
+        <select id="sourceLang" class="select">
+          <option value="auto" selected>Detectar automáticamente ✨</option>
+          <option value="en">Inglés</option>
+          <option value="de">Alemán</option>
+          <option value="nl">Neerlandés</option>
+          <option value="fr">Francés</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Portugués</option>
+          <option value="zh">Chino</option>
+          <option value="tr">Turco</option>
+          <option value="ru">Ruso</option>
+          <option value="ja">Japonés</option>
+        </select>
+      </div>
+
+
+      <div class="config-row">
+        <label class="config-label">🏷️ Nombre del Vendedor (Shopify Vendor)</label>
+        <p class="config-hint">Este nombre se aplicará a la columna "Vendor" en el archivo exportado</p>
+        <input type="text" id="brandName" class="select" placeholder="Ej: Rovelli Maison" value="Rovelli Maison"
+          style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:0.95rem;" />
+      </div>
+
+      <div class="config-row">
+        <div class="config-label-row">
+          <label class="config-label">Columnas a traducir</label>
+          <span class="selection-counter" id="selectedCount">0 seleccionadas</span>
+        </div>
+        <p class="config-hint">Selecciona las columnas que contienen texto a traducir</p>
+        <div class="columns-grid" id="columnsGrid"></div>
+        <div class="columns-actions">
+          <button class="btn-text" id="selectAll">Seleccionar todas</button>
+          <button class="btn-text" id="deselectAll">Deseleccionar todas</button>
+        </div>
+      </div>
+
+
+
+
+      <button class="btn btn-primary" id="translateBtn">
+        <span class="btn-icon-left">✨</span> Traducir al Español
+      </button>
+    </section>
+
+    <!-- STEP 3: Progress -->
+    <section class="card hidden" id="step-progress">
+      <div class="step-badge">3</div>
+      <h2>Traduciendo...</h2>
+      <div class="progress-info">
+        <span id="progressText">Preparando traducción...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <p class="muted center" id="progressDetail">Esto puede tardar unos minutos dependiendo del tamaño del archivo.</p>
+
+      <!-- Real-time Verification Panel -->
+      <div id="verificationPanel" class="hidden"
+        style="margin-top:1.2rem;padding:1rem 1.5rem;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
+        <p style="margin:0 0 0.6rem;font-weight:600;font-size:0.95rem;color:#c4b5fd;">🔍 Verificación en tiempo real</p>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="color:#4ade80;font-size:1.1rem;">✅</span>
+            <span style="font-size:0.9rem;color:#aaa;">Exitosas:</span>
+            <strong id="verifySuccess" style="color:#4ade80;">0</strong>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="color:#ff4d4d;font-size:1.1rem;">⚠️</span>
+            <span style="font-size:0.9rem;color:#aaa;">Fallidas:</span>
+            <strong id="verifyFailed" style="color:#4ade80;">0</strong>
+          </div>
+        </div>
+        <p id="verifyRetrying" style="margin:0.5rem 0 0;font-size:0.85rem;color:#fbbf24;"></p>
+      </div>
+    </section>
+
+    <!-- STEP 4: Result -->
+    <section class="card hidden" id="step-result">
+      <div class="step-badge">4</div>
+      <h2>¡Traducción completada! 🎉</h2>
+      <div class="result-stats" id="resultStats"></div>
+
+      <div class="result-tabs" style="margin-top: 2rem;">
+        <button class="tab active" data-tab="translated">Traducido</button>
+        <button class="tab" data-tab="comparison">Comparación</button>
+      </div>
+
+      <div class="tab-content" id="tab-translated">
+        <div class="table-wrapper">
+          <table class="preview-table" id="resultTable"></table>
+        </div>
+      </div>
+      <div class="tab-content hidden" id="tab-comparison">
+        <div class="table-wrapper">
+          <table class="preview-table" id="comparisonTable"></table>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn btn-primary" id="downloadBtn">⬇️ Descargar CSV Traducido</button>
+        <button class="btn btn-outline" id="startOverBtn">🔄 Traducir otro archivo</button>
+      </div>
+    </section>
+
+    <!-- SHARED Shopify Import Card -->
+    <section class="card hidden" id="shopifyStep">
+      <div class="step-badge" style="background: #95bf47;">🛍️</div>
+      <h2>Importar directamente a Shopify</h2>
+      <div class="shopify-import-panel" style="margin-top: 0;">
+        <p class="config-hint" style="margin-bottom: 16px;">Conecta tu tienda Shopify para subir los productos traducidos automáticamente.</p>
+
+        <!-- ── BLOQUE 1: Configuración OAuth (credenciales de Partner App) ── -->
+        <div id="oauthConfigBlock" style="background:rgba(150,191,72,0.06);border:1px solid rgba(150,191,72,0.25);border-radius:12px;padding:16px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.1rem;">🔑</span>
+              <strong style="font-size:0.95rem;color:#96bf48;">Credenciales de tu Shopify Partner App</strong>
+            </div>
+            <span id="oauthConfigSaved" style="display:none;font-size:0.78rem;color:#4ade80;">✅ Guardado</span>
+          </div>
+
+          <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-bottom:12px;line-height:1.5;">
+            Introduce tu <strong style="color:rgba(255,255,255,0.75);">Client ID</strong> y
+            <strong style="color:rgba(255,255,255,0.75);">Client Secret</strong> de tu app en
+            <a href="https://partners.shopify.com" target="_blank" style="color:#96bf48;">partners.shopify.com</a>.
+            Se guardan en este navegador y no se comparten con nadie.
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+            <input id="oauthClientId" type="text" placeholder="Client ID  (ej: abc123def456…)"
+              style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(150,191,72,0.3);background:rgba(255,255,255,0.05);color:#fff;font-size:0.88rem;font-family:monospace;box-sizing:border-box;" />
+            <div style="position:relative;">
+              <input id="oauthClientSecret" type="password" placeholder="Client Secret  (shpss_… o similar)"
+                style="width:100%;padding:9px 36px 9px 12px;border-radius:8px;border:1px solid rgba(150,191,72,0.3);background:rgba(255,255,255,0.05);color:#fff;font-size:0.88rem;font-family:monospace;box-sizing:border-box;" />
+              <button id="oauthSecretToggle" type="button"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.85rem;">👁</button>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button id="oauthSaveBtn"
+              style="background:#96bf48;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:0.88rem;font-weight:600;cursor:pointer;">
+              Guardar credenciales
+            </button>
+            <details style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-top:2px;">
+              <summary style="cursor:pointer;font-weight:600;color:rgba(255,255,255,0.55);">📖 Guía paso a paso — cómo crear la app en Shopify Partners</summary>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+
+                <!-- Paso 1 -->
+                <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px 12px;">
+                  <p style="margin:0 0 4px;font-weight:700;color:rgba(255,255,255,0.7);">① Crear la app</p>
+                  <ol style="margin:0 0 0 14px;line-height:1.9;color:rgba(255,255,255,0.5);">
+                    <li>Ve a <a href="https://partners.shopify.com" target="_blank" style="color:#96bf48;">partners.shopify.com</a> y crea una cuenta gratuita (si no tienes)</li>
+                    <li>En el dashboard: <strong>Apps → Create app → Create app manually</strong></li>
+                    <li>Ponle cualquier nombre (ej: <em>"CSV Traductor"</em>) y haz clic en <strong>Create</strong></li>
+                  </ol>
+                </div>
+
+                <!-- Paso 2 -->
+                <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px 12px;">
+                  <p style="margin:0 0 4px;font-weight:700;color:rgba(255,255,255,0.7);">② Configurar las URLs <span style="color:#f87171;font-weight:400;">(paso crítico)</span></p>
+                  <p style="margin:0 0 6px;color:rgba(255,255,255,0.4);line-height:1.6;">
+                    Ve a <strong>App setup</strong> → sección <strong>URLs</strong> y rellena los dos campos:
+                  </p>
+                  <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:8px 10px;margin-bottom:6px;">
+                    <p style="margin:0 0 2px;font-size:0.75rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.05em;">App URL</p>
+                    <code style="color:#96bf48;word-break:break-all;">https://csv-translator-gray.vercel.app</code>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:8px 10px;">
+                    <p style="margin:0 0 2px;font-size:0.75rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.05em;">Allowed redirection URL(s)</p>
+                    <code style="color:#96bf48;word-break:break-all;">https://csv-translator-gray.vercel.app/oauth_callback.html</code>
+                  </div>
+                  <p style="margin:6px 0 0;color:rgba(255,255,255,0.35);font-style:italic;">
+                    ⚠️ Si ves <code>http://localhost</code> en alguno de estos campos, sustitúyelo por las URLs de arriba. De lo contrario, Shopify rechazará la conexión.
+                  </p>
+                </div>
+
+                <!-- Paso 3 -->
+                <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px 12px;">
+                  <p style="margin:0 0 4px;font-weight:700;color:rgba(255,255,255,0.7);">③ Copiar las credenciales</p>
+                  <ol style="margin:0 0 0 14px;line-height:1.9;color:rgba(255,255,255,0.5);">
+                    <li>Haz clic en <strong>Save</strong></li>
+                    <li>En la misma página verás el <strong>Client ID</strong> y el <strong>Client secret</strong></li>
+                    <li>Cópialos y pégalos en los campos de arriba → <strong>Guardar credenciales</strong></li>
+                  </ol>
+                </div>
+
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- ── BLOQUE 2: Botón de conexión OAuth ── -->
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <input id="shopifyOAuthStore" type="text" placeholder="mi-tienda.myshopify.com" class="select"
+              style="flex:1;min-width:200px;padding:10px;" />
+            <button id="shopifyOAuthBtn"
+              style="display:flex;align-items:center;gap:8px;background:#96bf48;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:0.92rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity 0.2s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M15.337 23.979l4.639-1.162s-1.894-12.818-1.906-12.898c-.013-.08-.08-.134-.16-.134s-1.44-.099-1.44-.099-.96-.96-1.067-1.067v15.36zM11.64.107c-.02 0-.04.007-.053.02L9.979 1.734c-.974-.28-2.027-.427-3.066-.427C3.62 1.307.667 4.26.667 7.553c0 1.88.907 3.467 2.294 4.494l-1.12 3.346s1.6 1.6 5.6 1.6c.747 0 1.44-.08 2.08-.214l.373 2.534c.12.827.8 1.44 1.64 1.44h.053c.84 0 1.52-.613 1.64-1.44l1.48-10.053a.88.88 0 00-.88-1.013H12.8c-.493 0-.893.4-.893.893v.107c0 .373.24.72.6.84.52.173.893.653.893 1.213 0 .72-.587 1.307-1.307 1.307s-1.307-.587-1.307-1.307V9.333c0-.72.587-1.307 1.307-1.307h.507c1.573 0 2.84-1.267 2.84-2.84s-1.267-2.84-2.84-2.84h-.507c-.813 0-1.573.347-2.107.893L8.56 2.52A6.56 6.56 0 0111.64.107z"/></svg>
+              Conectar con Shopify
+            </button>
+          </div>
+          <p id="shopifyOAuthStatus" style="display:none;margin-top:8px;font-size:0.85rem;"></p>
+        </div>
+
+        <button class="btn btn-primary" id="shopifyDirectImport" disabled style="width:100%;margin-top:12px;">🚀
+          Importar productos a Shopify</button>
+        <div id="shopifyImportLog"
+          style="display:none;margin-top:16px;max-height:260px;overflow-y:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.08);padding:12px;font-size:0.85rem;">
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS -->
+
+
+  <footer class="footer">
+    <p>Powered by Google Translate · Traducción gratuita</p>
+  </footer>
+
+  <!-- Copy Modal -->
+  <div class="modal-overlay hidden" id="copyModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📥 Tu CSV traducido</h3>
+        <button class="btn-icon" id="closeCopyModal">✕</button>
+      </div>
+      <p class="modal-hint">Si la descarga automática no funcionó, copia el contenido de abajo y pégalo en un archivo
+        <strong>.csv</strong> nuevo.
+      </p>
+      <textarea id="csvTextarea" class="csv-textarea" readonly spellcheck="false"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="copyClipboardBtn">📋 Copiar al portapapeles</button>
+        <button class="btn btn-outline" id="closeCopyModal2"
+          onclick="document.getElementById('copyModal').classList.add('hidden')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Cache-busting: always load the latest JS -->
+  <script>
+    (function () {
+      var s = document.createElement('script');
+      s.src = 'app.js?v=' + Date.now();
+      document.body.appendChild(s);
+    })();
+  </script>
+
+</body>
+
+</html>

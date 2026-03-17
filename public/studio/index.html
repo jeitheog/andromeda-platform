@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creative Studio — Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #0a0a0f; color: #f1f5f9; min-height: 100vh; }
+    .nav {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .nav a { color: #94a3b8; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
+    .nav a:hover { color: #f1f5f9; }
+    .nav-title { font-weight: 700; font-size: 1rem; }
+    .sep { color: rgba(255,255,255,0.2); }
+    .hero {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: calc(100vh - 60px); text-align: center; padding: 40px 24px;
+    }
+    .icon { font-size: 64px; margin-bottom: 24px; }
+    h1 { font-size: 2.5rem; font-weight: 800; }
+    h1 span { background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p { color: #94a3b8; margin-top: 16px; max-width: 480px; font-size: 1.05rem; line-height: 1.6; }
+    .coming-soon {
+      margin-top: 32px;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+      color: #f59e0b; padding: 10px 20px; border-radius: 50px; font-size: 0.9rem; font-weight: 600;
+    }
+    .features {
+      margin-top: 48px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+    }
+    .feat {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 150px;
+    }
+    .feat .f-icon { font-size: 24px; margin-bottom: 8px; }
+    .feat p { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/">🌌 Andromeda Platform</a>
+    <span class="sep">›</span>
+    <span class="nav-title">🎨 Creative Studio</span>
+  </nav>
+
+  <div class="hero">
+    <div class="icon">🎨</div>
+    <h1>Creative <span>Studio</span></h1>
+    <p>Tu espacio de trabajo para crear assets creativos profesionales para tus campañas de marketing.</p>
+    <div class="coming-soon">🚧 En desarrollo — Próximamente</div>
+    <div class="features">
+      <div class="feat">
+        <div class="f-icon">🖼️</div>
+        <strong>Imágenes IA</strong>
+        <p>Genera creativos con inteligencia artificial</p>
+      </div>
+      <div class="feat">
+        <div class="f-icon">✏️</div>
+        <strong>Editor Visual</strong>
+        <p>Edita y personaliza tus anuncios</p>
+      </div>
+      <div class="feat">
+        <div class="f-icon">📁</div>
+        <strong>Librería</strong>
+        <p>Gestiona todos tus assets creativos</p>
+      </div>
+      <div class="feat">
+        <div class="f-icon">🔗</div>
+        <strong>Integración</strong>
+        <p>Conecta con Meta, TikTok y más</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacto — Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#0a0a0f; --surface:#12121a; --surface2:#1a1a26; --border:rgba(255,255,255,0.08); --accent:#6366f1; --text:#f1f5f9; --muted:#94a3b8; --success:#10b981; --error:#ef4444; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+    .nav { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-bottom:1px solid var(--border); }
+    .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); font-weight:700; font-size:1rem; }
+    .nav-links { display:flex; gap:8px; }
+    .nav-links a { color:var(--muted); text-decoration:none; font-size:0.9rem; padding:6px 14px; border-radius:8px; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .nav-links a.primary { background:var(--accent); color:#fff; font-weight:600; }
+    .nav-links a.primary:hover { background:#4f46e5; }
+
+    .page { flex:1; max-width:1000px; margin:0 auto; padding:60px 24px 80px; width:100%; }
+    .hero { text-align:center; margin-bottom:56px; }
+    .hero-icon { font-size:48px; margin-bottom:16px; }
+    .hero h1 { font-size:2.2rem; font-weight:800; }
+    .hero p { color:var(--muted); font-size:1rem; margin-top:10px; max-width:480px; margin-left:auto; margin-right:auto; line-height:1.6; }
+
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+    @media(max-width:720px) { .grid { grid-template-columns:1fr; } }
+
+    /* Contact form */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px; }
+    .card-title { font-size:1.1rem; font-weight:700; margin-bottom:20px; }
+    .form-group { margin-bottom:16px; }
+    label { display:block; font-size:0.82rem; font-weight:600; color:var(--muted); margin-bottom:6px; }
+    input, textarea, select { width:100%; padding:11px 14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.9rem; outline:none; transition:border-color 0.2s; resize:vertical; }
+    input:focus, textarea:focus, select:focus { border-color:var(--accent); }
+    textarea { min-height:120px; }
+    select option { background:#1a1a26; }
+    .btn { width:100%; padding:13px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'Outfit',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s; margin-top:4px; }
+    .btn:hover { background:#4f46e5; }
+    .btn:disabled { opacity:0.6; cursor:not-allowed; }
+    .success-msg { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:var(--success); padding:12px 16px; border-radius:10px; font-size:0.875rem; margin-bottom:16px; display:none; }
+    .error-msg { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--error); padding:12px 16px; border-radius:10px; font-size:0.875rem; margin-bottom:16px; display:none; }
+
+    /* Info cards */
+    .info-col { display:flex; flex-direction:column; gap:16px; }
+    .info-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px 24px; display:flex; align-items:flex-start; gap:16px; }
+    .info-icon { font-size:28px; flex-shrink:0; }
+    .info-title { font-size:0.95rem; font-weight:700; margin-bottom:4px; }
+    .info-desc { font-size:0.85rem; color:var(--muted); line-height:1.5; }
+    .info-desc a { color:var(--accent); text-decoration:none; }
+    .info-desc a:hover { text-decoration:underline; }
+
+    .faq-mini { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; }
+    .faq-mini-title { font-size:0.95rem; font-weight:700; margin-bottom:16px; }
+    .faq-item { border-bottom:1px solid rgba(255,255,255,0.05); padding:12px 0; }
+    .faq-item:last-child { border-bottom:none; padding-bottom:0; }
+    .faq-q { font-size:0.85rem; font-weight:600; cursor:pointer; display:flex; justify-content:space-between; }
+    .faq-q::after { content:'↓'; color:var(--muted); font-size:0.8rem; transition:transform 0.2s; }
+    .faq-item.open .faq-q::after { transform:rotate(180deg); }
+    .faq-a { font-size:0.82rem; color:var(--muted); line-height:1.6; margin-top:8px; display:none; }
+    .faq-item.open .faq-a { display:block; }
+
+    .footer { text-align:center; padding:24px; color:var(--muted); font-size:0.82rem; border-top:1px solid var(--border); }
+    .footer a { color:var(--accent); text-decoration:none; margin:0 8px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span style="font-size:22px">🌌</span> Andromeda Platform</a>
+    <div class="nav-links">
+      <a href="/pricing/">Precios</a>
+      <a href="/login/">Iniciar sesión</a>
+      <a href="/register/" class="primary">Empezar gratis</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="hero">
+      <div class="hero-icon">✉️</div>
+      <h1>¿En qué podemos ayudarte?</h1>
+      <p>Escríbenos y te responderemos en menos de 24 horas en días laborables.</p>
+    </div>
+
+    <div class="grid">
+      <!-- FORM -->
+      <div class="card">
+        <div class="card-title">Envíanos un mensaje</div>
+        <div id="successMsg" class="success-msg">✅ Mensaje enviado. Te responderemos pronto.</div>
+        <div id="errorMsg" class="error-msg"></div>
+        <form id="contactForm">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" id="contactName" placeholder="Tu nombre" required />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="contactEmail" placeholder="tu@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Asunto</label>
+            <select id="contactSubject">
+              <option value="soporte">Soporte técnico</option>
+              <option value="facturacion">Facturación y pagos</option>
+              <option value="planes">Información sobre planes</option>
+              <option value="partnership">Colaboración / Partnership</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mensaje</label>
+            <textarea id="contactMessage" placeholder="Cuéntanos en qué podemos ayudarte..." required></textarea>
+          </div>
+          <button type="submit" class="btn" id="submitBtn">Enviar mensaje</button>
+        </form>
+      </div>
+
+      <!-- INFO -->
+      <div class="info-col">
+        <div class="info-card">
+          <div class="info-icon">📧</div>
+          <div>
+            <div class="info-title">Email directo</div>
+            <div class="info-desc">Para consultas urgentes, escríbenos directamente a:<br /><a href="mailto:jeisonlebron666@gmail.com">jeisonlebron666@gmail.com</a></div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">⏱️</div>
+          <div>
+            <div class="info-title">Tiempo de respuesta</div>
+            <div class="info-desc">Respondemos en menos de <strong style="color:var(--text)">24 horas</strong> en días laborables (lunes a viernes). Los usuarios Pro y Enterprise tienen prioridad.</div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">📖</div>
+          <div>
+            <div class="info-title">Páginas de ayuda</div>
+            <div class="info-desc">
+              <a href="/legal/terminos/">Términos y condiciones</a><br />
+              <a href="/legal/privacidad/">Política de privacidad</a><br />
+              <a href="/legal/cookies/">Política de cookies</a><br />
+              <a href="/pricing/">Ver planes y precios</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini FAQ -->
+        <div class="faq-mini">
+          <div class="faq-mini-title">Preguntas frecuentes</div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Cómo cancelo mi suscripción?</div>
+            <div class="faq-a">Puedes cancelar desde tu dashboard en "Facturación" → "Gestionar suscripción". También puedes escribirnos y lo gestionamos por ti.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Ofrecéis reembolsos?</div>
+            <div class="faq-a">No realizamos reembolsos por períodos ya facturados, pero puedes cancelar en cualquier momento para que no se renueve el siguiente mes.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Puedo cambiar mi plan?</div>
+            <div class="faq-a">Sí, desde tu dashboard en la sección "Uso y Plan" puedes actualizar tu plan en cualquier momento. Los cambios aplican inmediatamente.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="/legal/privacidad/">Privacidad</a>
+    <a href="/legal/terminos/">Términos</a>
+    <a href="/legal/cookies/">Cookies</a>
+    <a href="/legal/aviso-legal/">Aviso Legal</a>
+    <a href="/contacto/">Contacto</a>
+    <br /><br />© 2026 Andromeda Platform. Todos los derechos reservados.
+  </div>
+
+  <script>
+    // Pre-fill if logged in
+    const user = localStorage.getItem('andromeda_user');
+    if (user) {
+      try {
+        const u = JSON.parse(user);
+        if (u.name) document.getElementById('contactName').value = u.name;
+        if (u.email) document.getElementById('contactEmail').value = u.email;
+      } catch(e) {}
+    }
+
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const successEl = document.getElementById('successMsg');
+      const errorEl = document.getElementById('errorMsg');
+      errorEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      // Simulate sending (mailto fallback)
+      const name = document.getElementById('contactName').value.trim();
+      const email = document.getElementById('contactEmail').value.trim();
+      const subject = document.getElementById('contactSubject').value;
+      const message = document.getElementById('contactMessage').value.trim();
+
+      // Open mailto as fallback
+      const subjectMap = {
+        soporte: 'Soporte técnico',
+        facturacion: 'Facturación y pagos',
+        planes: 'Información sobre planes',
+        partnership: 'Colaboración / Partnership',
+        otro: 'Consulta general'
+      };
+      const mailtoSubject = encodeURIComponent(`[Andromeda Platform] ${subjectMap[subject]}`);
+      const mailtoBody = encodeURIComponent(`Nombre: ${name}\nEmail: ${email}\n\n${message}`);
+      window.location.href = `mailto:jeisonlebron666@gmail.com?subject=${mailtoSubject}&body=${mailtoBody}`;
+
+      setTimeout(() => {
+        successEl.style.display = 'block';
+        document.getElementById('contactForm').reset();
+        btn.disabled = false;
+        btn.textContent = 'Enviar mensaje';
+      }, 800);
+    });
+  </script>
+</body>
+</html>

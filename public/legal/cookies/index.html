@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Cookies — Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#0a0a0f; --surface:#12121a; --border:rgba(255,255,255,0.08); --accent:#6366f1; --text:#f1f5f9; --muted:#94a3b8; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    .nav { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-bottom:1px solid var(--border); }
+    .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); font-weight:700; font-size:1rem; }
+    .nav a { color:var(--muted); text-decoration:none; font-size:0.9rem; padding:6px 14px; border-radius:8px; }
+    .nav a:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .page { max-width:760px; margin:0 auto; padding:48px 24px 80px; }
+    .page-badge { display:inline-block; background:rgba(99,102,241,0.12); color:var(--accent); font-size:0.75rem; font-weight:700; letter-spacing:0.06em; padding:4px 12px; border-radius:99px; margin-bottom:16px; }
+    h1 { font-size:2rem; font-weight:800; margin-bottom:8px; }
+    .updated { color:var(--muted); font-size:0.85rem; margin-bottom:40px; }
+    h2 { font-size:1.15rem; font-weight:700; margin:32px 0 12px; }
+    p { color:var(--muted); font-size:0.95rem; line-height:1.8; margin-bottom:12px; }
+    ul { color:var(--muted); font-size:0.95rem; line-height:1.8; padding-left:20px; margin-bottom:12px; }
+    ul li { margin-bottom:6px; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .divider { border:none; border-top:1px solid var(--border); margin:32px 0; }
+    .cookie-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.875rem; }
+    .cookie-table th { text-align:left; padding:10px 14px; background:rgba(255,255,255,0.04); color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid var(--border); }
+    .cookie-table td { padding:10px 14px; color:var(--muted); border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:top; }
+    .cookie-table tr:last-child td { border-bottom:none; }
+    .footer { text-align:center; padding:24px; color:var(--muted); font-size:0.82rem; border-top:1px solid var(--border); }
+    .footer a { color:var(--accent); text-decoration:none; margin:0 8px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span style="font-size:22px">🌌</span> Andromeda Platform</a>
+    <a href="/contacto/">Contacto</a>
+  </nav>
+
+  <div class="page">
+    <div class="page-badge">LEGAL</div>
+    <h1>Política de Cookies</h1>
+    <p class="updated">Última actualización: 20 de marzo de 2026</p>
+
+    <p>Esta política explica qué son las cookies, cuáles usamos en <strong>Andromeda Platform</strong> y cómo puedes controlarlas.</p>
+
+    <h2>1. ¿Qué son las cookies?</h2>
+    <p>Las cookies son pequeños archivos de texto que un sitio web almacena en tu dispositivo cuando lo visitas. Se utilizan para recordar tus preferencias, mantener tu sesión activa y mejorar la experiencia de uso.</p>
+
+    <h2>2. Cookies que utilizamos</h2>
+    <p>Andromeda Platform utiliza únicamente cookies técnicas y de sesión, estrictamente necesarias para el funcionamiento del servicio:</p>
+
+    <table class="cookie-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Duración</th>
+          <th>Finalidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code style="color:#a5b4fc">andromeda_token</code></td>
+          <td>localStorage</td>
+          <td>Hasta cerrar sesión</td>
+          <td>Token JWT de autenticación para mantener la sesión del usuario.</td>
+        </tr>
+        <tr>
+          <td><code style="color:#a5b4fc">andromeda_user</code></td>
+          <td>localStorage</td>
+          <td>Hasta cerrar sesión</td>
+          <td>Datos básicos del perfil del usuario (nombre, email, plan).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Técnicamente usamos <strong>localStorage</strong> del navegador (no cookies HTTP tradicionales), que funciona de forma similar pero sin enviarse al servidor en cada petición.</p>
+
+    <h2>3. Cookies de terceros</h2>
+    <p>Podemos cargar recursos de terceros que pueden establecer sus propias cookies:</p>
+    <ul>
+      <li><strong>Google Fonts:</strong> para cargar las tipografías del sitio. No recopila datos personales identificables.</li>
+      <li><strong>Stripe:</strong> cuando accedes a la pasarela de pago, Stripe puede establecer cookies para prevención de fraude.</li>
+    </ul>
+
+    <h2>4. No usamos cookies de seguimiento ni publicidad</h2>
+    <p>Andromeda Platform <strong>no utiliza</strong> cookies de seguimiento, analítica de terceros (Google Analytics, etc.) ni publicidad comportamental. Tu navegación en la plataforma es privada.</p>
+
+    <h2>5. Cómo gestionar las cookies</h2>
+    <p>Puedes controlar y eliminar las cookies desde la configuración de tu navegador:</p>
+    <ul>
+      <li><strong>Chrome:</strong> Configuración → Privacidad y seguridad → Cookies</li>
+      <li><strong>Firefox:</strong> Opciones → Privacidad y seguridad → Cookies</li>
+      <li><strong>Safari:</strong> Preferencias → Privacidad → Gestionar datos de sitios web</li>
+      <li><strong>Edge:</strong> Configuración → Privacidad, búsqueda y servicios → Cookies</li>
+    </ul>
+    <p>Ten en cuenta que deshabilitar el almacenamiento local impedirá que puedas iniciar sesión en la plataforma.</p>
+
+    <h2>6. Cambios en esta política</h2>
+    <p>Si modificamos el uso de cookies, actualizaremos esta página y la fecha de revisión. Te recomendamos revisarla periódicamente.</p>
+
+    <hr class="divider" />
+    <p>¿Tienes preguntas? <a href="/contacto/">Contáctanos</a>.</p>
+  </div>
+
+  <div class="footer">
+    <a href="/legal/privacidad/">Privacidad</a>
+    <a href="/legal/terminos/">Términos</a>
+    <a href="/legal/cookies/">Cookies</a>
+    <a href="/legal/aviso-legal/">Aviso Legal</a>
+    <a href="/contacto/">Contacto</a>
+    <br /><br />© 2026 Andromeda Platform. Todos los derechos reservados.
+  </div>
+</body>
+</html>

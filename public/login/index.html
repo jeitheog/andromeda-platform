@@ -105,7 +105,7 @@
           localStorage.setItem('andromeda_token', data.token);
           localStorage.setItem('andromeda_user', JSON.stringify(data.user));
           const role = data.user?.role;
-          window.location.href = role === 'admin' ? '/admin/users/' : '/dashboard/';
+          window.location.href = role === 'admin' ? '/admin/' : '/dashboard/';
         } else {
           errEl.textContent = data.error || 'Error al iniciar sesión';
           errEl.style.display = 'block';

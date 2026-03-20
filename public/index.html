@@ -18,9 +18,24 @@
     }
     body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 1rem; }
+    .nav-actions { display: flex; gap: 10px; align-items: center; }
+    .nav-actions a { color: var(--muted); text-decoration: none; font-size: 0.9rem; padding: 7px 16px; border-radius: 8px; transition: background 0.15s, color 0.15s; }
+    .nav-actions a:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .nav-actions a.btn-primary { background: var(--accent); color: #fff; font-weight: 600; }
+    .nav-actions a.btn-primary:hover { background: #4f46e5; }
+    .nav-user { display: none; align-items: center; gap: 10px; }
+    .nav-user span { color: var(--muted); font-size: 0.9rem; }
+    .nav-user a { color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; padding: 7px 16px; border-radius: 8px; border: 1px solid var(--accent); }
+    .nav-user a:hover { background: rgba(99,102,241,0.1); }
+
     .hero {
       text-align: center;
-      padding: 80px 24px 48px;
+      padding: 60px 24px 48px;
     }
     .hero-logo {
       display: inline-flex; align-items: center; gap: 12px;
@@ -106,6 +121,18 @@
 </head>
 <body>
 
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span style="font-size:22px">🌌</span> Andromeda Platform</a>
+    <div class="nav-actions" id="navActions">
+      <a href="/login/">Iniciar sesión</a>
+      <a href="/register/" class="btn-primary">Crear cuenta</a>
+    </div>
+    <div class="nav-user" id="navUser">
+      <span id="navUserName"></span>
+      <a href="/dashboard/">Mi Dashboard</a>
+    </div>
+  </nav>
+
   <div class="hero">
     <div class="hero-logo">
       <span class="icon">🌌</span>
@@ -163,6 +190,20 @@
   <div class="footer">
     Andromeda Platform — Tu suite de marketing digital
   </div>
+
+  <script>
+    const token = localStorage.getItem('andromeda_token');
+    const user = localStorage.getItem('andromeda_user');
+    if (token && user) {
+      try {
+        const u = JSON.parse(user);
+        document.getElementById('navActions').style.display = 'none';
+        const navUser = document.getElementById('navUser');
+        navUser.style.display = 'flex';
+        document.getElementById('navUserName').textContent = u.name || u.email;
+      } catch(e) {}
+    }
+  </script>
 
 </body>
 </html>

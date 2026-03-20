@@ -134,10 +134,10 @@
     </nav>
     <div class="sidebar-user">
       <button class="user-btn" id="userBtn" onclick="toggleDropdown()">
-        <div class="user-avatar">A</div>
+        <div class="user-avatar" id="adminAvatar">A</div>
         <div class="user-info">
-          <div class="user-name">Administrador</div>
-          <div class="user-plan">Enterprise</div>
+          <div class="user-name" id="adminName">Administrador</div>
+          <div class="user-plan" style="color:#ef4444;font-size:0.72rem;font-weight:600">⚡ Super Admin</div>
         </div>
         <span style="color:var(--muted);font-size:0.75rem">▲</span>
       </button>
@@ -430,6 +430,11 @@
       if (!profileRes.ok) { window.location.href = '/login/'; return; }
       const profile = await profileRes.json();
       if (profile.role !== 'admin') { window.location.href = '/dashboard/'; return; }
+
+      // Show admin name in sidebar
+      const name = profile.name || profile.email || 'Admin';
+      document.getElementById('adminName').textContent = name;
+      document.getElementById('adminAvatar').textContent = name.charAt(0).toUpperCase();
 
       // Load all pages
       allUsers = [];

@@ -390,6 +390,8 @@
       const res = await fetch('/api/user/profile', { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }
       currentUser = await res.json();
+      // Admins have their own panel
+      if (currentUser.role === 'admin') { window.location.href = '/admin/'; return; }
 
       const initial = (currentUser.name || currentUser.email || '?')[0].toUpperCase();
       document.getElementById('userAvatar').textContent = initial;

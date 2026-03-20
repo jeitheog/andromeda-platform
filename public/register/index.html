@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear cuenta — Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#0a0a0f; --surface:#12121a; --border:rgba(255,255,255,0.08); --accent:#6366f1; --text:#f1f5f9; --muted:#94a3b8; --error:#ef4444; --success:#10b981; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+    .nav { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-bottom:1px solid var(--border); }
+    .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); font-weight:700; font-size:1rem; }
+    .nav-logo span { font-size:22px; }
+    .nav-links { display:flex; gap:12px; align-items:center; }
+    .nav-links a { color:var(--muted); text-decoration:none; font-size:0.9rem; padding:6px 14px; border-radius:8px; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .page { flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:40px 36px; width:100%; max-width:440px; }
+    .card-header { text-align:center; margin-bottom:28px; }
+    .card-header .icon { font-size:36px; margin-bottom:12px; }
+    .card-header h1 { font-size:1.6rem; font-weight:700; }
+    .card-header p { color:var(--muted); font-size:0.9rem; margin-top:6px; }
+    .form-group { margin-bottom:16px; }
+    label { display:block; font-size:0.85rem; font-weight:600; color:var(--muted); margin-bottom:6px; }
+    input { width:100%; padding:12px 14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.95rem; outline:none; transition:border-color 0.2s; }
+    input:focus { border-color:var(--accent); }
+    .btn { width:100%; padding:13px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'Outfit',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s; margin-top:8px; }
+    .btn:hover { background:#4f46e5; }
+    .btn:disabled { opacity:0.6; cursor:not-allowed; }
+    .error-msg { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--error); padding:10px 14px; border-radius:8px; font-size:0.875rem; margin-bottom:16px; display:none; }
+    .plans { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px; }
+    .plan-opt { border:2px solid var(--border); border-radius:12px; padding:12px 8px; text-align:center; cursor:pointer; transition:border-color 0.2s; }
+    .plan-opt.selected { border-color:var(--accent); background:rgba(99,102,241,0.08); }
+    .plan-opt .plan-name { font-weight:700; font-size:0.9rem; }
+    .plan-opt .plan-price { font-size:0.75rem; color:var(--muted); margin-top:3px; }
+    .plan-opt .plan-limit { font-size:0.7rem; color:var(--muted); margin-top:2px; }
+    .footer-link { text-align:center; margin-top:20px; font-size:0.875rem; color:var(--muted); }
+    .footer-link a { color:var(--accent); text-decoration:none; font-weight:600; }
+    .footer-link a:hover { text-decoration:underline; }
+    .divider { border:none; border-top:1px solid var(--border); margin:18px 0; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span>🌌</span> Andromeda Platform</a>
+    <div class="nav-links">
+      <a href="/login/">Ya tengo cuenta</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon">🚀</div>
+        <h1>Crear cuenta</h1>
+        <p>Empieza gratis, sin tarjeta de crédito</p>
+      </div>
+
+      <div id="errorMsg" class="error-msg"></div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label for="name">Nombre</label>
+          <input type="text" id="name" placeholder="Tu nombre" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña <span style="color:var(--muted);font-weight:400">(mín. 6 caracteres)</span></label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="new-password" />
+        </div>
+
+        <hr class="divider" />
+        <label style="margin-bottom:10px;display:block">Elige tu plan</label>
+        <div class="plans">
+          <div class="plan-opt selected" data-plan="free">
+            <div class="plan-name">Free</div>
+            <div class="plan-price">€0/mes</div>
+            <div class="plan-limit">50 trad/mes</div>
+          </div>
+          <div class="plan-opt" data-plan="pro">
+            <div class="plan-name">Pro</div>
+            <div class="plan-price">€29/mes</div>
+            <div class="plan-limit">1.000 trad/mes</div>
+          </div>
+          <div class="plan-opt" data-plan="enterprise">
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-price">€99/mes</div>
+            <div class="plan-limit">Ilimitado</div>
+          </div>
+        </div>
+        <p id="paidNote" style="display:none;font-size:0.78rem;color:var(--muted);margin-bottom:12px;">* Te redirigiremos a Stripe para completar el pago.</p>
+
+        <button type="submit" class="btn" id="submitBtn">Crear cuenta gratis</button>
+      </form>
+
+      <hr class="divider" />
+      <div class="footer-link">¿Ya tienes cuenta? <a href="/login/">Inicia sesión</a></div>
+    </div>
+  </div>
+
+  <script>
+    let selectedPlan = 'free';
+    document.querySelectorAll('.plan-opt').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.plan-opt').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedPlan = el.dataset.plan;
+        const btn = document.getElementById('submitBtn');
+        const note = document.getElementById('paidNote');
+        if (selectedPlan === 'free') {
+          btn.textContent = 'Crear cuenta gratis';
+          note.style.display = 'none';
+        } else {
+          btn.textContent = `Crear cuenta y pagar ${selectedPlan === 'pro' ? '€29/mes' : '€99/mes'}`;
+          note.style.display = 'block';
+        }
+      });
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const errEl = document.getElementById('errorMsg');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Creando cuenta...';
+
+      try {
+        const res = await fetch('/api/user/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('andromeda_token', data.token);
+          localStorage.setItem('andromeda_user', JSON.stringify(data.user));
+          // If paid plan, go to checkout
+          if (selectedPlan !== 'free') {
+            const checkRes = await fetch('/api/stripe/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` },
+              body: JSON.stringify({ plan: selectedPlan })
+            });
+            const checkData = await checkRes.json();
+            if (checkData.url) { window.location.href = checkData.url; return; }
+          }
+          window.location.href = '/dashboard/';
+        } else {
+          errEl.textContent = data.error || 'Error al crear cuenta';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Crear cuenta';
+        }
+      } catch {
+        errEl.textContent = 'Error de conexión. Intenta de nuevo.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Crear cuenta';
+      }
+    });
+  </script>
+</body>
+</html>

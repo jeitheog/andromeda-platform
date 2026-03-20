@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Usuarios — Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0a0a0f; --surface:#12121a; --surface2:#1a1a26;
+      --border:rgba(255,255,255,0.08); --accent:#6366f1;
+      --text:#f1f5f9; --muted:#94a3b8; --error:#ef4444; --success:#10b981;
+      --sidebar-w:240px;
+    }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:100; }
+    .sidebar-logo { display:flex; align-items:center; gap:10px; padding:20px 20px 16px; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); }
+    .sidebar-logo .icon { font-size:26px; }
+    .sidebar-logo .info .name { font-weight:700; font-size:1rem; }
+    .sidebar-logo .info .sub { font-size:0.7rem; color:var(--muted); }
+    .sidebar-nav { flex:1; padding:12px 8px; display:flex; flex-direction:column; gap:2px; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer; color:var(--muted); font-size:0.9rem; text-decoration:none; transition:background 0.15s,color 0.15s; }
+    .nav-item:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+    .nav-item.active { background:rgba(99,102,241,0.15); color:var(--accent); font-weight:600; }
+    .nav-sep { height:1px; background:var(--border); margin:8px 4px; }
+
+    /* Dropdown usuario */
+    .sidebar-user { padding:14px 16px; border-top:1px solid var(--border); position:relative; }
+    .user-btn { display:flex; align-items:center; gap:10px; cursor:pointer; padding:8px 10px; border-radius:10px; border:none; background:none; color:var(--text); width:100%; }
+    .user-btn:hover { background:rgba(255,255,255,0.05); }
+    .user-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#ef4444,#dc2626); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; flex-shrink:0; }
+    .user-info { flex:1; min-width:0; }
+    .user-name { font-size:0.875rem; font-weight:600; }
+    .user-plan { font-size:0.72rem; color:var(--muted); }
+    .user-dropdown { position:absolute; bottom:calc(100% + 4px); left:8px; right:8px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:6px; display:none; z-index:200; box-shadow:0 -8px 32px rgba(0,0,0,0.4); }
+    .user-dropdown.open { display:block; }
+    .dropdown-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; cursor:pointer; color:var(--muted); font-size:0.875rem; transition:background 0.15s,color 0.15s; border:none; background:none; width:100%; }
+    .dropdown-item:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .dropdown-item.danger { color:var(--error); }
+    .dropdown-item.danger:hover { background:rgba(239,68,68,0.1); }
+
+    /* ── MAIN ── */
+    .main { margin-left:var(--sidebar-w); flex:1; padding:32px; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .page-title { font-size:1.5rem; font-weight:700; }
+    .page-sub { color:var(--muted); font-size:0.85rem; margin-top:2px; }
+
+    /* Stats */
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:24px; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; }
+    .stat-label { font-size:0.75rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+    .stat-value { font-size:1.6rem; font-weight:700; margin-top:6px; }
+
+    /* Filters */
+    .filters { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+    .filter-btn { padding:6px 14px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'Outfit',sans-serif; font-size:0.82rem; cursor:pointer; transition:all 0.15s; }
+    .filter-btn:hover, .filter-btn.active { background:rgba(99,102,241,0.12); border-color:var(--accent); color:var(--accent); }
+    .search-input { padding:7px 12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.875rem; outline:none; width:220px; }
+    .search-input:focus { border-color:var(--accent); }
+
+    /* Table */
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead { background:rgba(255,255,255,0.03); }
+    th { padding:12px 16px; text-align:left; font-size:0.75rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid var(--border); }
+    td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.875rem; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(255,255,255,0.02); }
+
+    .badge { display:inline-block; padding:2px 9px; border-radius:99px; font-size:0.7rem; font-weight:700; }
+    .badge-free { background:rgba(148,163,184,0.15); color:var(--muted); }
+    .badge-pro { background:rgba(99,102,241,0.15); color:#818cf8; }
+    .badge-enterprise { background:rgba(245,158,11,0.15); color:#fbbf24; }
+    .badge-active { background:rgba(16,185,129,0.15); color:var(--success); }
+    .badge-inactive { background:rgba(239,68,68,0.15); color:var(--error); }
+
+    .action-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:0.75rem; cursor:pointer; font-family:'Outfit',sans-serif; transition:all 0.15s; margin-right:4px; }
+    .action-btn:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .action-btn.danger { color:var(--error); }
+    .action-btn.danger:hover { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3); }
+
+    .pagination { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-top:1px solid var(--border); font-size:0.85rem; color:var(--muted); }
+    .page-btns { display:flex; gap:6px; }
+    .page-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-family:'Outfit',sans-serif; font-size:0.8rem; }
+    .page-btn:hover { background:rgba(255,255,255,0.06); }
+    .page-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+    /* Modal */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:500; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:28px; width:100%; max-width:400px; }
+    .modal-title { font-size:1.1rem; font-weight:700; margin-bottom:20px; }
+    .modal-form .form-group { margin-bottom:14px; }
+    .modal-form label { display:block; font-size:0.82rem; color:var(--muted); font-weight:600; margin-bottom:6px; }
+    .modal-form select { width:100%; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.9rem; outline:none; }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+    .modal-btn { padding:9px 20px; border-radius:8px; font-family:'Outfit',sans-serif; font-size:0.875rem; font-weight:600; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text); }
+    .modal-btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .modal-btn.primary:hover { background:#4f46e5; }
+
+    .toast { position:fixed; bottom:24px; right:24px; background:#1e293b; border:1px solid var(--border); border-radius:12px; padding:12px 20px; font-size:0.875rem; display:none; z-index:999; }
+    .toast.show { display:block; }
+
+    .empty-state { text-align:center; padding:48px 24px; color:var(--muted); }
+    .empty-state .icon { font-size:40px; margin-bottom:12px; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="/" class="sidebar-logo">
+      <span class="icon">🌌</span>
+      <div class="info">
+        <div class="name">Andromeda Platform</div>
+        <div class="sub">Panel de administración</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="/admin/users/"><span>👥</span> Usuarios</a>
+      <div class="nav-sep"></div>
+      <a class="nav-item" href="/"><span>🏠</span> Plataforma</a>
+      <a class="nav-item" href="/translator/"><span>📊</span> CSV Traductor</a>
+      <a class="nav-item" href="/ads/"><span>🚀</span> Andromeda Ads</a>
+    </nav>
+    <div class="sidebar-user">
+      <button class="user-btn" id="userBtn" onclick="toggleDropdown()">
+        <div class="user-avatar">A</div>
+        <div class="user-info">
+          <div class="user-name">Administrador</div>
+          <div class="user-plan">Enterprise</div>
+        </div>
+        <span style="color:var(--muted);font-size:0.75rem">▲</span>
+      </button>
+      <div class="user-dropdown" id="userDropdown">
+        <button class="dropdown-item danger" onclick="logout()"><span>🚪</span> Cerrar sesión</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">👥 Gestión de Usuarios</div>
+        <div class="page-sub" id="totalInfo">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card"><div class="stat-label">Total usuarios</div><div class="stat-value" id="statTotal">—</div></div>
+      <div class="stat-card"><div class="stat-label">Free</div><div class="stat-value" id="statFree">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pro</div><div class="stat-value" id="statPro">—</div></div>
+      <div class="stat-card"><div class="stat-label">Enterprise</div><div class="stat-value" id="statEnt">—</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input class="search-input" id="searchInput" placeholder="🔍 Buscar por email..." oninput="debounceSearch()" />
+      <button class="filter-btn active" data-plan="" onclick="filterByPlan(this)">Todos</button>
+      <button class="filter-btn" data-plan="free" onclick="filterByPlan(this)">Free</button>
+      <button class="filter-btn" data-plan="pro" onclick="filterByPlan(this)">Pro</button>
+      <button class="filter-btn" data-plan="enterprise" onclick="filterByPlan(this)">Enterprise</button>
+      <button class="filter-btn" data-status="inactive" onclick="filterByStatus(this)">Inactivos</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Plan</th>
+            <th>Estado</th>
+            <th>Uso este mes</th>
+            <th>Creado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="usersTable">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">Cargando...</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span id="paginationInfo">—</span>
+        <div class="page-btns" id="pageBtns"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal editar usuario -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-title">Editar usuario</div>
+      <div class="modal-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input id="modalEmail" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.9rem;outline:none" disabled />
+        </div>
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="modalPlan">
+            <option value="free">Free — €0/mes (50 trad/mes)</option>
+            <option value="pro">Pro — €29/mes (1.000 trad/mes)</option>
+            <option value="enterprise">Enterprise — €99/mes (ilimitado)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="modalStatus">
+            <option value="active">Activo</option>
+            <option value="inactive">Inactivo</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn" onclick="closeModal()">Cancelar</button>
+        <button class="modal-btn primary" onclick="saveUser()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let currentPage = 1;
+    let planFilter = '';
+    let statusFilter = '';
+    let searchTerm = '';
+    let editingUserId = null;
+    let allUsers = [];
+    let searchTimer = null;
+
+    function getToken() { return localStorage.getItem('andromeda_token') || ''; }
+    function authHeaders() { return { 'Content-Type':'application/json', 'Authorization': `Bearer ${getToken()}` }; }
+
+    function showToast(msg, duration=2500) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('open'); }
+    document.addEventListener('click', e => {
+      if (!document.getElementById('userBtn').contains(e.target))
+        document.getElementById('userDropdown').classList.remove('open');
+    });
+
+    function logout() {
+      localStorage.removeItem('andromeda_token');
+      localStorage.removeItem('andromeda_user');
+      window.location.href = '/login/';
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { currentPage = 1; renderTable(); }, 250);
+    }
+
+    function filterByPlan(btn) {
+      document.querySelectorAll('.filter-btn[data-plan]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      planFilter = btn.dataset.plan;
+      currentPage = 1;
+      renderTable();
+    }
+
+    function filterByStatus(btn) {
+      btn.classList.toggle('active');
+      statusFilter = btn.classList.contains('active') ? 'inactive' : '';
+      currentPage = 1;
+      renderTable();
+    }
+
+    function fmtDate(s) {
+      if (!s) return '—';
+      return new Date(s).toLocaleDateString('es', {day:'2-digit',month:'short',year:'numeric'});
+    }
+
+    function renderTable() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      let filtered = allUsers.filter(u => {
+        if (planFilter && u.plan !== planFilter) return false;
+        if (statusFilter && u.status !== statusFilter) return false;
+        if (search && !u.email.toLowerCase().includes(search) && !u.name?.toLowerCase().includes(search)) return false;
+        return true;
+      });
+
+      const perPage = 20;
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total / perPage));
+      if (currentPage > pages) currentPage = pages;
+      const slice = filtered.slice((currentPage-1)*perPage, currentPage*perPage);
+
+      document.getElementById('paginationInfo').textContent = `${total} usuario${total !== 1 ? 's' : ''}`;
+      document.getElementById('totalInfo').textContent = `${allUsers.length} usuarios en total`;
+
+      // Stats
+      document.getElementById('statTotal').textContent = allUsers.filter(u => u.status === 'active').length;
+      document.getElementById('statFree').textContent = allUsers.filter(u => u.plan === 'free').length;
+      document.getElementById('statPro').textContent = allUsers.filter(u => u.plan === 'pro').length;
+      document.getElementById('statEnt').textContent = allUsers.filter(u => u.plan === 'enterprise').length;
+
+      const tbody = document.getElementById('usersTable');
+      if (!slice.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">👤</div><p>No hay usuarios con estos filtros</p></div></td></tr>`;
+      } else {
+        tbody.innerHTML = slice.map(u => {
+          const limit = u.plan === 'enterprise' ? '∞' : u.plan === 'pro' ? '1.000' : '50';
+          const usagePct = u.plan === 'enterprise' ? 0 : Math.min(100, Math.round(u.usage_count / (u.plan === 'pro' ? 1000 : 50) * 100));
+          return `
+            <tr>
+              <td>
+                <div style="font-weight:600">${u.email}</div>
+                ${u.name ? `<div style="font-size:0.78rem;color:var(--muted)">${u.name}</div>` : ''}
+              </td>
+              <td><span class="badge badge-${u.plan}">${u.plan.charAt(0).toUpperCase()+u.plan.slice(1)}</span></td>
+              <td><span class="badge badge-${u.status}">${u.status === 'active' ? 'Activo' : 'Inactivo'}</span></td>
+              <td>
+                <div style="font-size:0.8rem">${u.usage_count} / ${limit}</div>
+                ${u.plan !== 'enterprise' ? `<div style="height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:4px;width:80px"><div style="height:100%;width:${usagePct}%;background:${usagePct>90?'#ef4444':usagePct>70?'#f59e0b':'#6366f1'};border-radius:2px"></div></div>` : ''}
+              </td>
+              <td style="color:var(--muted);font-size:0.82rem">${fmtDate(u.created_at)}</td>
+              <td>
+                <button class="action-btn" onclick='openEdit(${JSON.stringify(u)})'>✏️ Editar</button>
+                ${u.status === 'active'
+                  ? `<button class="action-btn danger" onclick="deactivateUser('${u.id}')">🚫 Desactivar</button>`
+                  : `<button class="action-btn" onclick="activateUser('${u.id}')">✅ Activar</button>`
+                }
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Pagination
+      const pageBtns = document.getElementById('pageBtns');
+      pageBtns.innerHTML = '';
+      if (pages > 1) {
+        const prev = document.createElement('button');
+        prev.className = 'page-btn'; prev.textContent = '←'; prev.disabled = currentPage === 1;
+        prev.onclick = () => { currentPage--; renderTable(); };
+        pageBtns.appendChild(prev);
+        for (let i=1; i<=pages; i++) {
+          const b = document.createElement('button');
+          b.className = 'page-btn' + (i===currentPage?' active':'');
+          b.textContent = i; b.onclick = (i => () => { currentPage=i; renderTable(); })(i);
+          pageBtns.appendChild(b);
+        }
+        const next = document.createElement('button');
+        next.className = 'page-btn'; next.textContent = '→'; next.disabled = currentPage === pages;
+        next.onclick = () => { currentPage++; renderTable(); };
+        pageBtns.appendChild(next);
+      }
+    }
+
+    function openEdit(user) {
+      editingUserId = user.id;
+      document.getElementById('modalEmail').value = user.email;
+      document.getElementById('modalPlan').value = user.plan;
+      document.getElementById('modalStatus').value = user.status;
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').classList.remove('open');
+      editingUserId = null;
+    }
+
+    async function saveUser() {
+      const plan = document.getElementById('modalPlan').value;
+      const status = document.getElementById('modalStatus').value;
+      const res = await fetch(`/api/admin/users/${editingUserId}`, {
+        method: 'PUT', headers: authHeaders(),
+        body: JSON.stringify({ plan, status })
+      });
+      if (res.ok) {
+        const u = allUsers.find(x => x.id === editingUserId);
+        if (u) { u.plan = plan; u.status = status; }
+        closeModal();
+        renderTable();
+        showToast('✅ Usuario actualizado');
+      } else {
+        showToast('❌ Error al actualizar');
+      }
+    }
+
+    async function deactivateUser(id) {
+      if (!confirm('¿Desactivar este usuario?')) return;
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE', headers: authHeaders()
+      });
+      if (res.ok) {
+        const u = allUsers.find(x => x.id === id);
+        if (u) u.status = 'inactive';
+        renderTable();
+        showToast('Usuario desactivado');
+      }
+    }
+
+    async function activateUser(id) {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'PUT', headers: authHeaders(),
+        body: JSON.stringify({ status: 'active' })
+      });
+      if (res.ok) {
+        const u = allUsers.find(x => x.id === id);
+        if (u) u.status = 'active';
+        renderTable();
+        showToast('Usuario activado');
+      }
+    }
+
+    async function loadUsers() {
+      const token = getToken();
+      if (!token) { window.location.href = '/login/'; return; }
+
+      // Verify admin
+      const profileRes = await fetch('/api/user/profile', { headers: authHeaders() });
+      if (!profileRes.ok) { window.location.href = '/login/'; return; }
+      const profile = await profileRes.json();
+      if (profile.role !== 'admin') { window.location.href = '/dashboard/'; return; }
+
+      // Load all pages
+      allUsers = [];
+      let page = 1;
+      while (true) {
+        const res = await fetch(`/api/admin/users?page=${page}&per_page=100`, { headers: authHeaders() });
+        const data = await res.json();
+        allUsers = allUsers.concat(data.users || []);
+        if (allUsers.length >= data.total || !data.users?.length) break;
+        page++;
+      }
+      renderTable();
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>

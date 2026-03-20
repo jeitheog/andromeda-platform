@@ -11,10 +11,13 @@ import http.server
 import json
 import os
 import re
+import secrets
+import sqlite3
 import time
 import urllib.parse
 import urllib.request
 import urllib.error
+import uuid
 
 PORT = int(os.environ.get('PORT', 8080))
 SHOPIFY_API_VERSION = "2024-01"
@@ -33,14 +36,88 @@ def _load_env():
 
 _load_env()
 
+# ── Planes y límites ─────────────────────────────────────────────────────────
+PLAN_LIMITS = {'free': 50, 'pro': 1000, 'enterprise': -1}  # -1 = ilimitado
+PLAN_PRICES = {
+    'pro': {'amount': 2900, 'currency': 'eur', 'label': 'Pro — €29/mes'},
+    'enterprise': {'amount': 9900, 'currency': 'eur', 'label': 'Enterprise — €99/mes'},
+}
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'platform.db')
+
+
+# ── SQLite ───────────────────────────────────────────────────────────────────
+def _get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def _init_db():
+    with _get_db() as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                salt TEXT NOT NULL,
+                name TEXT DEFAULT '',
+                plan TEXT DEFAULT 'free',
+                status TEXT DEFAULT 'active',
+                stripe_customer_id TEXT,
+                stripe_subscription_id TEXT,
+                usage_count INTEGER DEFAULT 0,
+                usage_reset_date TEXT DEFAULT '',
+                created_at TEXT,
+                updated_at TEXT
+            )
+        ''')
+        conn.commit()
+
+def _reset_usage_if_new_month(user):
+    today = time.strftime('%Y-%m-01')
+    if user['usage_reset_date'] != today:
+        with _get_db() as conn:
+            conn.execute('UPDATE users SET usage_count=0, usage_reset_date=? WHERE id=?',
+                         (today, user['id']))
+            conn.commit()
+        return 0
+    return user['usage_count']
+
+def _increment_usage(user_id):
+    today = time.strftime('%Y-%m-01')
+    with _get_db() as conn:
+        conn.execute('''UPDATE users SET usage_count = usage_count + 1,
+                        usage_reset_date = COALESCE(NULLIF(usage_reset_date,''), ?)
+                        WHERE id=?''', (today, user_id))
+        conn.commit()
+
+def _stripe_request(endpoint, method='POST', data=None):
+    secret_key = os.environ.get('STRIPE_SECRET_KEY', '')
+    token = base64.b64encode(f'{secret_key}:'.encode()).decode()
+    body = urllib.parse.urlencode(data).encode() if data else None
+    req = urllib.request.Request(
+        f'https://api.stripe.com/v1/{endpoint}',
+        data=body,
+        headers={'Authorization': f'Basic {token}', 'Content-Type': 'application/x-www-form-urlencoded'},
+        method=method
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.status, json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        try: return e.code, json.loads(e.read().decode())
+        except: return e.code, {'error': {'message': str(e)}}
+
 
 # ── JWT ─────────────────────────────────────────────────────────────────────
 def _verify_password(password, stored_hash, salt):
     computed = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
     return hmac.compare_digest(computed, stored_hash)
 
-def _create_token(email, role, ttl=86400):
-    payload = json.dumps({'email': email, 'role': role, 'exp': int(time.time()) + ttl})
+def _create_token(email, role, ttl=86400, extra=None):
+    data = {'email': email, 'role': role, 'exp': int(time.time()) + ttl}
+    if extra:
+        data.update(extra)
+    payload = json.dumps(data)
     payload_b64 = base64.urlsafe_b64encode(payload.encode()).rstrip(b'=').decode()
     secret = os.environ.get('SECRET_KEY', '')
     sig = hmac.new(secret.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
@@ -116,8 +193,32 @@ class AndromeadaPlatformHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_verify()
         elif path == '/api/meta-stats.js':
             self._handle_meta_stats()
+        elif path == '/api/user/profile':
+            self._handle_user_profile_get()
+        elif path == '/api/user/usage':
+            self._handle_user_usage()
+        elif path == '/api/stripe/portal':
+            self._handle_stripe_portal()
+        elif path == '/api/admin/users':
+            self._handle_admin_list_users()
         else:
             super().do_GET()
+
+    def do_PUT(self):
+        path = self.path.split('?')[0]
+        if path == '/api/user/profile':
+            self._handle_user_profile_put()
+        elif path.startswith('/api/admin/users/'):
+            self._handle_admin_update_user(path.split('/')[-1])
+        else:
+            self.send_error(405, "Method not allowed")
+
+    def do_DELETE(self):
+        path = self.path.split('?')[0]
+        if path.startswith('/api/admin/users/'):
+            self._handle_admin_delete_user(path.split('/')[-1])
+        else:
+            self.send_error(405, "Method not allowed")
 
     def do_PATCH(self):
         if self.path == '/api/meta-optimize.js':
@@ -130,6 +231,9 @@ class AndromeadaPlatformHandler(http.server.SimpleHTTPRequestHandler):
         routes = {
             '/api/auth/login': self._handle_login,
             '/api/auth/logout': self._handle_logout,
+            '/api/user/register': self._handle_user_register,
+            '/api/stripe/checkout': self._handle_stripe_checkout,
+            '/api/stripe/webhook': self._handle_stripe_webhook,
             '/api/translate': self._handle_translate,
             '/api/tag': self._handle_tag,
             '/api/scraper': self._handle_scraper,
@@ -970,17 +1074,308 @@ class AndromeadaPlatformHandler(http.server.SimpleHTTPRequestHandler):
                 pass
         self._send_json(200, {'competitor': brand_name[:50], 'ads': ads, 'funnels': 2, 'report': report, 'source': 'mock'})
 
+    # ── AUTH helpers ─────────────────────────────────────────────────────────
+    def _get_current_user(self):
+        """Returns user row from DB if token valid, else None."""
+        token = self.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return None
+        payload = _verify_token(token)
+        if not payload:
+            return None
+        # Admin has no DB row — return synthetic object
+        if payload.get('role') == 'admin':
+            return {'id': 'admin', 'email': payload['email'], 'role': 'admin',
+                    'plan': 'enterprise', 'status': 'active', 'name': 'Admin'}
+        with _get_db() as conn:
+            row = conn.execute('SELECT * FROM users WHERE id=? AND status=?',
+                               (payload.get('user_id', ''), 'active')).fetchone()
+        return dict(row) if row else None
+
+    def _require_user(self):
+        """Returns user or sends 401. Use: user = self._require_user(); if not user: return"""
+        user = self._get_current_user()
+        if not user:
+            self._send_json(401, {'error': 'Autenticación requerida'})
+        return user
+
+    def _require_admin(self):
+        user = self._get_current_user()
+        if not user or user.get('role') != 'admin':
+            self._send_json(403, {'error': 'Acceso denegado'})
+            return None
+        return user
+
+    # ── USER REGISTER ─────────────────────────────────────────────────────────
+    def _handle_user_register(self):
+        body = self._read_json()
+        email = body.get('email', '').strip().lower()
+        password = body.get('password', '')
+        name = body.get('name', '').strip()
+        if not email or not password:
+            self._send_json(400, {'error': 'Email y contraseña son obligatorios'})
+            return
+        if len(password) < 6:
+            self._send_json(400, {'error': 'La contraseña debe tener al menos 6 caracteres'})
+            return
+        salt = secrets.token_hex(16)
+        pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
+        user_id = str(uuid.uuid4())
+        now = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        try:
+            with _get_db() as conn:
+                conn.execute(
+                    'INSERT INTO users (id,email,password_hash,salt,name,plan,status,usage_count,usage_reset_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                    (user_id, email, pwd_hash, salt, name, 'free', 'active', 0, time.strftime('%Y-%m-01'), now, now)
+                )
+                conn.commit()
+        except sqlite3.IntegrityError:
+            self._send_json(409, {'error': 'Ya existe una cuenta con ese email'})
+            return
+        token = _create_token(email, 'user', extra={'user_id': user_id})
+        self._send_json(201, {
+            'success': True, 'token': token,
+            'user': {'id': user_id, 'email': email, 'name': name, 'plan': 'free', 'role': 'user'}
+        })
+
+    # ── LOGIN (extendido para usuarios normales) ───────────────────────────────
+    def _handle_login(self):
+        body = self._read_json()
+        email = body.get('email', '').strip().lower()
+        password = body.get('password', '')
+
+        # 1. Intentar admin
+        admin_email = os.environ.get('ADMIN_EMAIL', '').strip().lower()
+        admin_hash = os.environ.get('ADMIN_PASSWORD_HASH', '')
+        admin_salt = os.environ.get('ADMIN_SALT', '')
+        if admin_email and email == admin_email and _verify_password(password, admin_hash, admin_salt):
+            token = _create_token(email, 'admin')
+            self._send_json(200, {'success': True, 'token': token,
+                'user': {'email': email, 'name': 'Admin', 'plan': 'enterprise',
+                         'role': 'admin', 'status': 'active'}})
+            return
+
+        # 2. Intentar usuario normal
+        with _get_db() as conn:
+            row = conn.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
+        if not row:
+            self._send_json(401, {'success': False, 'error': 'Credenciales incorrectas'})
+            return
+        user = dict(row)
+        if user['status'] != 'active':
+            self._send_json(403, {'success': False, 'error': 'Cuenta desactivada'})
+            return
+        if not _verify_password(password, user['password_hash'], user['salt']):
+            self._send_json(401, {'success': False, 'error': 'Credenciales incorrectas'})
+            return
+        token = _create_token(email, 'user', extra={'user_id': user['id']})
+        self._send_json(200, {'success': True, 'token': token,
+            'user': {'id': user['id'], 'email': email, 'name': user['name'],
+                     'plan': user['plan'], 'role': 'user', 'status': user['status']}})
+
+    # ── USER PROFILE ──────────────────────────────────────────────────────────
+    def _handle_user_profile_get(self):
+        user = self._require_user()
+        if not user:
+            return
+        self._send_json(200, {
+            'id': user['id'], 'email': user['email'], 'name': user.get('name', ''),
+            'plan': user['plan'], 'role': user.get('role', 'user'), 'status': user.get('status', 'active')
+        })
+
+    def _handle_user_profile_put(self):
+        user = self._require_user()
+        if not user:
+            return
+        if user.get('role') == 'admin':
+            self._send_json(200, {'success': True})
+            return
+        body = self._read_json()
+        name = body.get('name', '').strip()
+        now = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        with _get_db() as conn:
+            conn.execute('UPDATE users SET name=?, updated_at=? WHERE id=?',
+                         (name, now, user['id']))
+            conn.commit()
+        self._send_json(200, {'success': True, 'name': name})
+
+    # ── USER USAGE ────────────────────────────────────────────────────────────
+    def _handle_user_usage(self):
+        user = self._require_user()
+        if not user:
+            return
+        if user.get('role') == 'admin':
+            self._send_json(200, {'used': 0, 'limit': -1, 'plan': 'enterprise',
+                                  'resetDate': time.strftime('%Y-%m-01')})
+            return
+        used = _reset_usage_if_new_month(user)
+        limit = PLAN_LIMITS.get(user['plan'], 50)
+        self._send_json(200, {
+            'used': used, 'limit': limit, 'plan': user['plan'],
+            'resetDate': time.strftime('%Y-%m-01'),
+            'unlimited': limit == -1
+        })
+
+    # ── STRIPE CHECKOUT ───────────────────────────────────────────────────────
+    def _handle_stripe_checkout(self):
+        user = self._require_user()
+        if not user:
+            return
+        body = self._read_json()
+        plan = body.get('plan', '')
+        if plan not in PLAN_PRICES:
+            self._send_json(400, {'error': 'Plan inválido'})
+            return
+        app_url = os.environ.get('APP_URL', f'http://localhost:{PORT}')
+        price_id = os.environ.get(f'STRIPE_{plan.upper()}_PRICE_ID', '')
+        if not price_id:
+            self._send_json(500, {'error': f'STRIPE_{plan.upper()}_PRICE_ID no configurado'})
+            return
+        status, data = _stripe_request('checkout/sessions', data={
+            'mode': 'subscription',
+            'line_items[0][price]': price_id,
+            'line_items[0][quantity]': '1',
+            'success_url': f'{app_url}/dashboard/?upgraded=1',
+            'cancel_url': f'{app_url}/dashboard/',
+            'customer_email': user['email'],
+            'metadata[user_id]': user['id'],
+            'metadata[plan]': plan,
+        })
+        if status == 200:
+            self._send_json(200, {'url': data['url']})
+        else:
+            self._send_json(status, {'error': data.get('error', {}).get('message', 'Error Stripe')})
+
+    # ── STRIPE WEBHOOK ────────────────────────────────────────────────────────
+    def _handle_stripe_webhook(self):
+        length = int(self.headers.get('Content-Length', 0))
+        payload = self.rfile.read(length)
+        sig_header = self.headers.get('Stripe-Signature', '')
+        webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+        # Verify signature
+        try:
+            parts = {p.split('=')[0]: p.split('=')[1] for p in sig_header.split(',')}
+            ts = parts.get('t', '')
+            sig = parts.get('v1', '')
+            signed = f'{ts}.'.encode() + payload
+            expected = hmac.new(webhook_secret.encode(), signed, hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(sig, expected):
+                self._send_json(400, {'error': 'Firma inválida'})
+                return
+        except Exception:
+            self._send_json(400, {'error': 'Error verificando webhook'})
+            return
+        event = json.loads(payload.decode())
+        etype = event.get('type', '')
+        obj = event.get('data', {}).get('object', {})
+        if etype in ('checkout.session.completed', 'customer.subscription.updated'):
+            meta = obj.get('metadata', {})
+            user_id = meta.get('user_id', '')
+            plan = meta.get('plan', '')
+            stripe_customer = obj.get('customer', '')
+            stripe_sub = obj.get('subscription', obj.get('id', ''))
+            if user_id and plan:
+                now = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+                with _get_db() as conn:
+                    conn.execute(
+                        'UPDATE users SET plan=?, stripe_customer_id=?, stripe_subscription_id=?, updated_at=? WHERE id=?',
+                        (plan, stripe_customer, stripe_sub, now, user_id)
+                    )
+                    conn.commit()
+        elif etype == 'customer.subscription.deleted':
+            stripe_sub = obj.get('id', '')
+            if stripe_sub:
+                now = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+                with _get_db() as conn:
+                    conn.execute('UPDATE users SET plan=?, updated_at=? WHERE stripe_subscription_id=?',
+                                 ('free', now, stripe_sub))
+                    conn.commit()
+        self._send_json(200, {'received': True})
+
+    # ── STRIPE PORTAL ─────────────────────────────────────────────────────────
+    def _handle_stripe_portal(self):
+        user = self._require_user()
+        if not user:
+            return
+        customer_id = user.get('stripe_customer_id', '')
+        if not customer_id:
+            self._send_json(400, {'error': 'No tienes suscripción activa'})
+            return
+        app_url = os.environ.get('APP_URL', f'http://localhost:{PORT}')
+        status, data = _stripe_request('billing_portal/sessions', data={
+            'customer': customer_id,
+            'return_url': f'{app_url}/dashboard/',
+        })
+        if status == 200:
+            self._send_json(200, {'url': data['url']})
+        else:
+            self._send_json(status, {'error': data.get('error', {}).get('message', 'Error Stripe')})
+
+    # ── ADMIN — USUARIOS ──────────────────────────────────────────────────────
+    def _handle_admin_list_users(self):
+        if not self._require_admin():
+            return
+        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        plan_filter = params.get('plan', [''])[0]
+        status_filter = params.get('status', [''])[0]
+        page = int(params.get('page', ['1'])[0])
+        per_page = 20
+        offset = (page - 1) * per_page
+        query = 'SELECT id,email,name,plan,status,usage_count,usage_reset_date,created_at,stripe_subscription_id FROM users WHERE 1=1'
+        args = []
+        if plan_filter:
+            query += ' AND plan=?'; args.append(plan_filter)
+        if status_filter:
+            query += ' AND status=?'; args.append(status_filter)
+        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+        args += [per_page, offset]
+        with _get_db() as conn:
+            rows = conn.execute(query, args).fetchall()
+            total = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+        self._send_json(200, {
+            'users': [dict(r) for r in rows],
+            'total': total, 'page': page, 'per_page': per_page
+        })
+
+    def _handle_admin_update_user(self, user_id):
+        if not self._require_admin():
+            return
+        body = self._read_json()
+        allowed = {'plan', 'status', 'name'}
+        updates = {k: v for k, v in body.items() if k in allowed}
+        if not updates:
+            self._send_json(400, {'error': 'Nada que actualizar'})
+            return
+        now = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        set_clause = ', '.join(f'{k}=?' for k in updates)
+        with _get_db() as conn:
+            conn.execute(f'UPDATE users SET {set_clause}, updated_at=? WHERE id=?',
+                         list(updates.values()) + [now, user_id])
+            conn.commit()
+        self._send_json(200, {'success': True})
+
+    def _handle_admin_delete_user(self, user_id):
+        if not self._require_admin():
+            return
+        now = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        with _get_db() as conn:
+            conn.execute('UPDATE users SET status=?, updated_at=? WHERE id=?',
+                         ('inactive', now, user_id))
+            conn.commit()
+        self._send_json(200, {'success': True})
+
     def log_message(self, format, *args):
         if "/api/" in (args[0] if args else ""):
             super().log_message(format, *args)
 
 
 def main():
+    _init_db()
     print()
     print("  Andromeda Platform")
     print("  ─────────────────────────────────────────")
     print(f"  Servidor: http://localhost:{PORT}")
-    print(f"  Modulos:  /translator | /ads | /studio")
+    print(f"  Modulos:  /translator | /ads | /studio | /dashboard | /admin/users")
     print()
     server = http.server.HTTPServer(("", PORT), AndromeadaPlatformHandler)
     try:

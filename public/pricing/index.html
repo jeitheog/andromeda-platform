@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Precios — Andromeda Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a26;
+      --border: rgba(255,255,255,0.08); --accent: #6366f1;
+      --text: #f1f5f9; --muted: #94a3b8;
+    }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    .nav { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-bottom:1px solid var(--border); }
+    .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); font-weight:700; font-size:1rem; }
+    .nav-actions { display:flex; gap:10px; align-items:center; }
+    .nav-actions a { color:var(--muted); text-decoration:none; font-size:0.9rem; padding:7px 16px; border-radius:8px; transition:background 0.15s,color 0.15s; }
+    .nav-actions a:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .nav-actions a.btn-primary { background:var(--accent); color:#fff; font-weight:600; }
+    .nav-actions a.btn-primary:hover { background:#4f46e5; }
+    .nav-user { display:none; align-items:center; gap:10px; }
+    .nav-user span { color:var(--muted); font-size:0.9rem; }
+    .nav-user a { color:var(--accent); text-decoration:none; font-size:0.9rem; font-weight:600; padding:7px 16px; border-radius:8px; border:1px solid var(--accent); }
+
+    /* HERO */
+    .hero { text-align:center; padding:64px 24px 40px; }
+    .hero h1 { font-size:clamp(2rem,5vw,3rem); font-weight:800; }
+    .hero h1 span { background:linear-gradient(135deg,#6366f1,#a855f7,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .hero p { color:var(--muted); font-size:1.05rem; margin-top:14px; max-width:500px; margin-left:auto; margin-right:auto; line-height:1.6; }
+
+    /* TOGGLE anual/mensual */
+    .toggle-wrap { display:flex; align-items:center; justify-content:center; gap:12px; margin:28px 0; }
+    .toggle-label { font-size:0.9rem; color:var(--muted); }
+    .toggle-label.active { color:var(--text); font-weight:600; }
+    .toggle { width:44px; height:24px; background:var(--accent); border-radius:99px; position:relative; cursor:pointer; border:none; flex-shrink:0; }
+    .toggle::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:3px; left:3px; transition:left 0.2s; }
+    .toggle.yearly::after { left:23px; }
+    .badge-save { background:rgba(16,185,129,0.15); color:#10b981; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:99px; }
+
+    /* PLANS */
+    .plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; max-width:960px; margin:0 auto; padding:0 24px 80px; }
+
+    .plan { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 28px; display:flex; flex-direction:column; gap:20px; position:relative; transition:transform 0.2s,border-color 0.2s; }
+    .plan:hover { transform:translateY(-4px); }
+    .plan.featured { border-color:var(--accent); background:linear-gradient(180deg,rgba(99,102,241,0.06) 0%,var(--surface) 100%); }
+
+    .plan-badge { position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; padding:4px 14px; border-radius:99px; white-space:nowrap; }
+
+    .plan-header { text-align:center; }
+    .plan-icon { font-size:36px; margin-bottom:10px; }
+    .plan-name { font-size:1.2rem; font-weight:800; }
+    .plan-desc { color:var(--muted); font-size:0.85rem; margin-top:6px; }
+
+    .plan-price { text-align:center; }
+    .price-amount { font-size:3rem; font-weight:800; line-height:1; }
+    .price-amount span { font-size:1.2rem; font-weight:600; vertical-align:top; margin-top:8px; display:inline-block; color:var(--muted); }
+    .price-period { font-size:0.8rem; color:var(--muted); margin-top:4px; }
+    .price-yearly { font-size:0.78rem; color:#10b981; font-weight:600; margin-top:2px; display:none; }
+
+    .plan-limit { text-align:center; background:var(--surface2); border-radius:10px; padding:10px; }
+    .limit-value { font-size:1.4rem; font-weight:800; }
+    .limit-label { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+
+    .plan-features { list-style:none; display:flex; flex-direction:column; gap:10px; flex:1; }
+    .plan-features li { font-size:0.875rem; color:var(--muted); display:flex; align-items:flex-start; gap:10px; }
+    .plan-features li::before { content:'✓'; color:#10b981; font-weight:700; flex-shrink:0; margin-top:1px; }
+    .plan-features li.no::before { content:'✗'; color:rgba(255,255,255,0.2); }
+    .plan-features li.no { color:rgba(255,255,255,0.25); }
+
+    .plan-cta { display:block; width:100%; padding:13px; text-align:center; border-radius:12px; font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; text-decoration:none; transition:all 0.2s; border:2px solid var(--border); color:var(--text); background:transparent; }
+    .plan-cta:hover { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,0.08); }
+    .plan-cta.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .plan-cta.primary:hover { background:#4f46e5; }
+    .plan-cta.dashboard { background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981; }
+    .plan-cta.dashboard:hover { background:rgba(16,185,129,0.2); }
+
+    /* FAQ */
+    .faq { max-width:640px; margin:0 auto; padding:0 24px 80px; }
+    .faq h2 { font-size:1.5rem; font-weight:700; text-align:center; margin-bottom:28px; }
+    .faq-item { border-bottom:1px solid var(--border); padding:18px 0; }
+    .faq-q { font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+    .faq-q::after { content:'↓'; color:var(--muted); font-size:0.85rem; transition:transform 0.2s; }
+    .faq-item.open .faq-q::after { transform:rotate(180deg); }
+    .faq-a { color:var(--muted); font-size:0.875rem; line-height:1.7; margin-top:12px; display:none; }
+    .faq-item.open .faq-a { display:block; }
+
+    /* FOOTER */
+    .footer { text-align:center; padding:24px; color:var(--muted); font-size:0.85rem; border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo"><span style="font-size:22px">🌌</span> Andromeda Platform</a>
+    <div class="nav-actions" id="navActions">
+      <a href="/login/">Iniciar sesión</a>
+      <a href="/register/" class="btn-primary">Empezar gratis</a>
+    </div>
+    <div class="nav-user" id="navUser">
+      <span id="navUserName"></span>
+      <a href="/dashboard/">Mi Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>Precios <span>simples y claros</span></h1>
+    <p>Empieza gratis y escala según tus necesidades. Sin contratos, cancela cuando quieras.</p>
+  </div>
+
+  <div class="toggle-wrap">
+    <span class="toggle-label active" id="labelMonthly">Mensual</span>
+    <button class="toggle" id="billingToggle" onclick="toggleBilling()"></button>
+    <span class="toggle-label" id="labelYearly">Anual <span class="badge-save">−20%</span></span>
+  </div>
+
+  <div class="plans">
+
+    <!-- FREE -->
+    <div class="plan">
+      <div class="plan-header">
+        <div class="plan-icon">🆓</div>
+        <div class="plan-name">Free</div>
+        <div class="plan-desc">Para probar la plataforma</div>
+      </div>
+      <div class="plan-price">
+        <div class="price-amount"><span>€</span>0</div>
+        <div class="price-period">para siempre</div>
+      </div>
+      <div class="plan-limit">
+        <div class="limit-value">50</div>
+        <div class="limit-label">traducciones / mes</div>
+      </div>
+      <ul class="plan-features">
+        <li>Acceso a CSV Traductor</li>
+        <li>Integración con Shopify</li>
+        <li>50 traducciones mensuales</li>
+        <li>Soporte por email</li>
+        <li class="no">Andromeda Ads</li>
+        <li class="no">Creative Studio</li>
+        <li class="no">Prioridad en soporte</li>
+      </ul>
+      <a href="/register/" class="plan-cta" id="freeCta">Empezar gratis</a>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan featured">
+      <div class="plan-badge">⭐ MÁS POPULAR</div>
+      <div class="plan-header">
+        <div class="plan-icon">⚡</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-desc">Para tiendas en crecimiento</div>
+      </div>
+      <div class="plan-price">
+        <div class="price-amount" id="proPrice"><span>€</span>29</div>
+        <div class="price-period" id="proPeriod">por mes</div>
+        <div class="price-yearly" id="proYearly">€278/año (equivale a €23/mes)</div>
+      </div>
+      <div class="plan-limit">
+        <div class="limit-value">1.000</div>
+        <div class="limit-label">traducciones / mes</div>
+      </div>
+      <ul class="plan-features">
+        <li>Todo lo de Free</li>
+        <li>1.000 traducciones mensuales</li>
+        <li>Acceso a Andromeda Ads</li>
+        <li>Conceptos de anuncios con IA</li>
+        <li>Lanzamiento en Meta Ads</li>
+        <li>Dashboard de métricas</li>
+        <li>Soporte prioritario</li>
+      </ul>
+      <a href="/register/?plan=pro" class="plan-cta primary" id="proCta">Empezar con Pro</a>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="plan">
+      <div class="plan-header">
+        <div class="plan-icon">🏆</div>
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-desc">Para grandes operaciones</div>
+      </div>
+      <div class="plan-price">
+        <div class="price-amount" id="entPrice"><span>€</span>99</div>
+        <div class="price-period" id="entPeriod">por mes</div>
+        <div class="price-yearly" id="entYearly">€950/año (equivale a €79/mes)</div>
+      </div>
+      <div class="plan-limit">
+        <div class="limit-value">∞</div>
+        <div class="limit-label">traducciones ilimitadas</div>
+      </div>
+      <ul class="plan-features">
+        <li>Todo lo de Pro</li>
+        <li>Traducciones ilimitadas</li>
+        <li>Creative Studio completo</li>
+        <li>Multi-cuenta de Ads</li>
+        <li>Google Ads + TikTok Ads</li>
+        <li>API dedicada</li>
+        <li>Soporte 24/7 dedicado</li>
+      </ul>
+      <a href="/register/?plan=enterprise" class="plan-cta" id="entCta">Empezar con Enterprise</a>
+    </div>
+
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <h2>Preguntas frecuentes</h2>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">¿Puedo cancelar en cualquier momento?</div>
+      <div class="faq-a">Sí, puedes cancelar tu suscripción en cualquier momento desde tu dashboard. No hay permanencia mínima ni penalizaciones.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">¿Qué pasa si supero mi límite de traducciones?</div>
+      <div class="faq-a">Si alcanzas tu límite mensual, podrás seguir usando la plataforma pero las traducciones quedarán pausadas hasta el siguiente mes o hasta que actualices tu plan.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">¿Los pagos son seguros?</div>
+      <div class="faq-a">Sí. Todos los pagos se procesan a través de Stripe, la plataforma de pagos más segura del mercado. No almacenamos ningún dato de tu tarjeta.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">¿Puedo cambiar de plan?</div>
+      <div class="faq-a">Puedes mejorar o reducir tu plan en cualquier momento desde tu dashboard. Los cambios se aplican inmediatamente.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">¿Hay descuento por pago anual?</div>
+      <div class="faq-a">Sí, al pagar anualmente obtienes un 20% de descuento frente al precio mensual. Pro pasa de €29/mes a €23/mes y Enterprise de €99/mes a €79/mes.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Andromeda Platform — Tu suite de marketing digital · <a href="/" style="color:var(--accent);text-decoration:none">Volver al inicio</a>
+  </div>
+
+  <script>
+    let isYearly = false;
+
+    function toggleBilling() {
+      isYearly = !isYearly;
+      document.getElementById('billingToggle').classList.toggle('yearly', isYearly);
+      document.getElementById('labelMonthly').classList.toggle('active', !isYearly);
+      document.getElementById('labelYearly').classList.toggle('active', isYearly);
+
+      if (isYearly) {
+        document.getElementById('proPrice').innerHTML = '<span>€</span>23';
+        document.getElementById('proPeriod').textContent = 'por mes, facturado anualmente';
+        document.getElementById('proYearly').style.display = 'block';
+        document.getElementById('entPrice').innerHTML = '<span>€</span>79';
+        document.getElementById('entPeriod').textContent = 'por mes, facturado anualmente';
+        document.getElementById('entYearly').style.display = 'block';
+      } else {
+        document.getElementById('proPrice').innerHTML = '<span>€</span>29';
+        document.getElementById('proPeriod').textContent = 'por mes';
+        document.getElementById('proYearly').style.display = 'none';
+        document.getElementById('entPrice').innerHTML = '<span>€</span>99';
+        document.getElementById('entPeriod').textContent = 'por mes';
+        document.getElementById('entYearly').style.display = 'none';
+      }
+    }
+
+    function toggleFaq(el) {
+      el.parentElement.classList.toggle('open');
+    }
+
+    // Nav: show dashboard if logged in
+    const token = localStorage.getItem('andromeda_token');
+    const user = localStorage.getItem('andromeda_user');
+    if (token && user) {
+      try {
+        const u = JSON.parse(user);
+        document.getElementById('navActions').style.display = 'none';
+        const navUser = document.getElementById('navUser');
+        navUser.style.display = 'flex';
+        document.getElementById('navUserName').textContent = u.name || u.email;
+        // Update CTAs for logged-in users
+        document.getElementById('freeCta').textContent = 'Ir al Dashboard';
+        document.getElementById('freeCta').href = '/dashboard/';
+        document.getElementById('freeCta').className = 'plan-cta dashboard';
+        document.getElementById('proCta').textContent = 'Actualizar a Pro';
+        document.getElementById('proCta').href = '/dashboard/';
+        document.getElementById('entCta').textContent = 'Actualizar a Enterprise';
+        document.getElementById('entCta').href = '/dashboard/';
+      } catch(e) {}
+    }
+  </script>
+</body>
+</html>

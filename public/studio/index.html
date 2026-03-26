@@ -48,6 +48,28 @@
     <span class="nav-title">🎨 Creative Studio</span>
   </nav>
 
+  <!-- PLAN GATE (shown for free users at limit) -->
+  <div id="planGate" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; display:none; align-items:center; justify-content:center; padding:24px;">
+    <div style="background:#12121a; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:40px; max-width:420px; width:100%; text-align:center;">
+      <div style="font-size:48px; margin-bottom:16px;">🔒</div>
+      <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:10px;">Límite alcanzado</h2>
+      <p style="color:#94a3b8; font-size:0.95rem; line-height:1.6; margin-bottom:8px;" id="gateMsg">Has usado tus 3 ediciones gratuitas este mes.</p>
+      <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:28px;">Actualiza a <strong style="color:#f1f5f9">Pro</strong> para ediciones ilimitadas.</p>
+      <a href="/dashboard/" style="display:block; background:#6366f1; color:#fff; padding:13px; border-radius:10px; font-weight:700; text-decoration:none; font-size:1rem; margin-bottom:10px;">⚡ Actualizar a Pro — €29/mes</a>
+      <a href="/dashboard/" style="color:#94a3b8; font-size:0.85rem; text-decoration:none;">Volver al dashboard</a>
+    </div>
+  </div>
+
+  <!-- USAGE BAR (for free users) -->
+  <div id="usageBar" style="display:none; background:#12121a; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 24px; font-size:0.82rem; color:#94a3b8; display:none; align-items:center; gap:12px; flex-wrap:wrap;">
+    <span>🎨 Creative Studio — Plan Free:</span>
+    <span id="usageText">— / 3 ediciones este mes</span>
+    <div style="flex:1; min-width:120px; max-width:200px; height:6px; background:rgba(255,255,255,0.08); border-radius:3px;">
+      <div id="usageFill" style="height:100%; border-radius:3px; background:#6366f1; transition:width 0.3s; width:0%"></div>
+    </div>
+    <a href="/dashboard/" style="color:#6366f1; font-weight:600; text-decoration:none; margin-left:auto;">Actualizar plan →</a>
+  </div>
+
   <div class="hero">
     <div class="icon">🎨</div>
     <h1>Creative <span>Studio</span></h1>
@@ -76,5 +98,37 @@
       </div>
     </div>
   </div>
+
+  <script>
+    async function checkAccess() {
+      const token = localStorage.getItem('andromeda_token');
+      if (!token) return; // no logged in, no gate
+      try {
+        const res = await fetch('/api/user/module-usage', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const studio = data.studio;
+        if (!studio || studio.unlimited) return; // pro/enterprise — no limit
+
+        // Show usage bar
+        const bar = document.getElementById('usageBar');
+        bar.style.display = 'flex';
+        const pct = Math.min(100, Math.round(studio.used / studio.limit * 100));
+        document.getElementById('usageText').textContent = `${studio.used} / ${studio.limit} ediciones este mes`;
+        document.getElementById('usageFill').style.width = pct + '%';
+        document.getElementById('usageFill').style.background = pct >= 100 ? '#ef4444' : pct >= 66 ? '#f59e0b' : '#6366f1';
+
+        // Show gate if at limit
+        if (studio.used >= studio.limit) {
+          document.getElementById('gateMsg').textContent = `Has usado tus ${studio.limit} ediciones gratuitas este mes.`;
+          const gate = document.getElementById('planGate');
+          gate.style.display = 'flex';
+        }
+      } catch(e) {}
+    }
+    checkAccess();
+  </script>
 </body>
 </html>

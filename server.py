@@ -37,7 +37,9 @@ def _load_env():
 _load_env()
 
 # ── Planes y límites ─────────────────────────────────────────────────────────
-PLAN_LIMITS = {'free': 50, 'pro': 1000, 'enterprise': -1}  # -1 = ilimitado
+PLAN_LIMITS = {'free': 50, 'pro': 1000, 'enterprise': -1}  # traducciones CSV
+ADS_LIMITS   = {'free': 3,  'pro': 20,   'enterprise': -1}  # campañas Ads/mes
+STUDIO_LIMITS= {'free': 3,  'pro': -1,   'enterprise': -1}  # ediciones Studio/mes
 PLAN_PRICES = {
     'pro': {'amount': 2900, 'currency': 'eur', 'label': 'Pro — €29/mes'},
     'enterprise': {'amount': 9900, 'currency': 'eur', 'label': 'Enterprise — €99/mes'},
@@ -66,10 +68,38 @@ def _init_db():
                 stripe_subscription_id TEXT,
                 usage_count INTEGER DEFAULT 0,
                 usage_reset_date TEXT DEFAULT '',
+                ads_count INTEGER DEFAULT 0,
+                studio_count INTEGER DEFAULT 0,
+                module_reset_date TEXT DEFAULT '',
                 created_at TEXT,
                 updated_at TEXT
             )
         ''')
+        # Migrate existing DBs — add columns if missing
+        for col, default in [('ads_count','0'), ('studio_count','0'), ('module_reset_date',"''")]:
+            try:
+                conn.execute(f'ALTER TABLE users ADD COLUMN {col} INTEGER DEFAULT {default}')
+            except Exception:
+                pass
+        conn.commit()
+
+def _reset_module_usage_if_new_month(user_id, current_ads, current_studio):
+    today = time.strftime('%Y-%m-01')
+    with _get_db() as conn:
+        row = conn.execute('SELECT module_reset_date FROM users WHERE id=?', (user_id,)).fetchone()
+        if row and row['module_reset_date'] != today:
+            conn.execute('UPDATE users SET ads_count=0, studio_count=0, module_reset_date=? WHERE id=?',
+                         (today, user_id))
+            conn.commit()
+            return 0, 0
+    return current_ads, current_studio
+
+def _increment_module(user_id, module):
+    col = 'ads_count' if module == 'ads' else 'studio_count'
+    today = time.strftime('%Y-%m-01')
+    with _get_db() as conn:
+        conn.execute(f'UPDATE users SET {col} = {col} + 1, module_reset_date = COALESCE(NULLIF(module_reset_date,""), ?) WHERE id=?',
+                     (today, user_id))
         conn.commit()
 
 def _reset_usage_if_new_month(user):
@@ -197,6 +227,8 @@ class AndromeadaPlatformHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_user_profile_get()
         elif path == '/api/user/usage':
             self._handle_user_usage()
+        elif path == '/api/user/module-usage':
+            self._handle_module_usage()
         elif path == '/api/stripe/portal':
             self._handle_stripe_portal()
         elif path == '/api/admin/users':
@@ -232,6 +264,7 @@ class AndromeadaPlatformHandler(http.server.SimpleHTTPRequestHandler):
             '/api/auth/login': self._handle_login,
             '/api/auth/logout': self._handle_logout,
             '/api/user/register': self._handle_user_register,
+            '/api/user/track-module': self._handle_track_module,
             '/api/stripe/checkout': self._handle_stripe_checkout,
             '/api/stripe/webhook': self._handle_stripe_webhook,
             '/api/translate': self._handle_translate,
@@ -1215,6 +1248,61 @@ class AndromeadaPlatformHandler(http.server.SimpleHTTPRequestHandler):
             'resetDate': time.strftime('%Y-%m-01'),
             'unlimited': limit == -1
         })
+
+    # ── MODULE USAGE ──────────────────────────────────────────────────────────
+    def _handle_module_usage(self):
+        user = self._require_user()
+        if not user:
+            return
+        if user.get('role') == 'admin':
+            self._send_json(200, {
+                'ads':    {'used': 0, 'limit': -1, 'unlimited': True},
+                'studio': {'used': 0, 'limit': -1, 'unlimited': True},
+            })
+            return
+        ads_raw    = user.get('ads_count', 0) or 0
+        studio_raw = user.get('studio_count', 0) or 0
+        ads_used, studio_used = _reset_module_usage_if_new_month(user['id'], ads_raw, studio_raw)
+        plan = user['plan']
+        ads_limit    = ADS_LIMITS.get(plan, 3)
+        studio_limit = STUDIO_LIMITS.get(plan, 3)
+        self._send_json(200, {
+            'ads':    {'used': ads_used,    'limit': ads_limit,    'unlimited': ads_limit == -1},
+            'studio': {'used': studio_used, 'limit': studio_limit, 'unlimited': studio_limit == -1},
+            'plan': plan,
+        })
+
+    def _handle_track_module(self):
+        user = self._require_user()
+        if not user:
+            return
+        if user.get('role') == 'admin':
+            self._send_json(200, {'success': True, 'allowed': True})
+            return
+        body = self._read_json()
+        module = body.get('module', '')
+        if module not in ('ads', 'studio'):
+            self._send_json(400, {'error': 'Módulo inválido'})
+            return
+        plan = user['plan']
+        ads_raw    = user.get('ads_count', 0) or 0
+        studio_raw = user.get('studio_count', 0) or 0
+        ads_used, studio_used = _reset_module_usage_if_new_month(user['id'], ads_raw, studio_raw)
+        if module == 'ads':
+            limit = ADS_LIMITS.get(plan, 3)
+            used  = ads_used
+        else:
+            limit = STUDIO_LIMITS.get(plan, 3)
+            used  = studio_used
+        if limit != -1 and used >= limit:
+            self._send_json(429, {
+                'success': False, 'allowed': False,
+                'error': f'Has alcanzado el límite de {limit} usos/mes en este módulo. Actualiza tu plan para continuar.',
+                'used': used, 'limit': limit
+            })
+            return
+        _increment_module(user['id'], module)
+        self._send_json(200, {'success': True, 'allowed': True, 'used': used + 1, 'limit': limit})
 
     # ── STRIPE CHECKOUT ───────────────────────────────────────────────────────
     def _handle_stripe_checkout(self):

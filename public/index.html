@@ -591,16 +591,14 @@
   </footer>
 
   <script>
-    // Nav user toggle
     const token = localStorage.getItem('andromeda_token');
     const user = localStorage.getItem('andromeda_user');
     if (token && user) {
       try {
         const u = JSON.parse(user);
-        document.getElementById('navActions').style.display = 'none';
-        const navUser = document.getElementById('navUser');
-        navUser.style.display = 'flex';
-        document.getElementById('navUserName').textContent = u.name || u.email;
+        // Redirigir al dashboard si ya está logueado
+        const dest = u.role === 'admin' ? '/admin/' : '/dashboard/';
+        window.location.replace(dest);
       } catch(e) {}
     }
   </script>
